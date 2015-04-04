@@ -49,8 +49,8 @@ namespace MineLib.Client.Graphics.Components
             DrawString(_spriteBatch, _spriteFont, Color.Black, ram, new Rectangle(1, 31, Game.Window.ClientBounds.Width, 30));
             DrawString(_spriteBatch, _spriteFont, Color.White, ram, new Rectangle(0, 30, Game.Window.ClientBounds.Width, 30));
 
-            DrawString(_spriteBatch, _spriteFont, Color.Black, gpu, new Rectangle(1, 31, Game.Window.ClientBounds.Width, 30));
-            DrawString(_spriteBatch, _spriteFont, Color.White, gpu, new Rectangle(0, 30, Game.Window.ClientBounds.Width, 30));
+            DrawString(_spriteBatch, _spriteFont, Color.Black, gpu, new Rectangle(1, 61, Game.Window.ClientBounds.Width, 30));
+            DrawString(_spriteBatch, _spriteFont, Color.White, gpu, new Rectangle(0, 60, Game.Window.ClientBounds.Width, 30));
 
             _spriteBatch.End();
         }

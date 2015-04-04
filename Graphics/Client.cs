@@ -142,8 +142,8 @@ namespace MineLib.Client.Graphics
 
         protected override void Draw(GameTime gameTime)
         {
-            //GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            //GraphicsDevice.Clear(Color.Black);
 
 
 	        if (_world != null)

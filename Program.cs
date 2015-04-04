@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using MineLib.Network.Data.Anvil;
 
 namespace MineLib.Client
 {
@@ -16,13 +14,6 @@ namespace MineLib.Client
         [STAThread]
         static void Main()
         {
-            List<Block> b = new List<Block>();
-            for (byte i = 0; i < 14; i++)
-            {
-                b.Add(new Block(161, i));
-            }
-            
-
             using (var game = new Graphics.Client())
                 game.Run();
         }

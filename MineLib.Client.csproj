@@ -66,7 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="BouncyCastle.Crypto">
-      <HintPath>..\MineLib.ClientWrapper\Network\Libraries\BouncyCastle.Crypto.dll</HintPath>
+      <HintPath>Network\Libraries\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
     <Reference Include="Ionic.Zip.Reduced, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -74,7 +74,7 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>Libraries\Newtonsoft.Json.dll</HintPath>
+      <HintPath>Network\Libraries\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK">
       <HintPath>$(MSBuildProgramFiles32)\MonoGame\v3.0\Assemblies\WindowsGL\OpenTK.dll</HintPath>
@@ -90,19 +90,34 @@
   <ItemGroup>
     <Content Include="Icon.ico" />
     <Content Include="Libraries\Ionic.Zip.Reduced.dll" />
-    <Content Include="Libraries\Newtonsoft.Json.dll" />
   </ItemGroup>
   <ItemGroup>
     <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MineLib.ClientWrapper\Network\MineLib.Network.csproj">
+    <ProjectReference Include="Network\ProtocolModern\ProtocolModern.csproj">
+      <Project>{1360e652-2f92-4245-b3ad-0ec4d73e2945}</Project>
+      <Name>ProtocolModern</Name>
+    </ProjectReference>
+    <ProjectReference Include="Network\MineLib.Network.csproj">
       <Project>{e7c8320e-49a4-4187-afe3-15c814201e1e}</Project>
       <Name>MineLib.Network</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MineLib.ClientWrapper\Network\ProtocolModern\ProtocolModern.csproj">
-      <Project>{1360e652-2f92-4245-b3ad-0ec4d73e2945}</Project>
-      <Name>ProtocolModern</Name>
+    <ProjectReference Include="Network\ProtocolClassic\ProtocolClassic.csproj">
+      <Project>{bdaddf68-34a0-41c9-8728-8de743cc4383}</Project>
+      <Name>ProtocolClassic</Name>
+    </ProjectReference>
+    <ProjectReference Include="Network\ProtocolCLIWrapper\ProtocolCLIWrapper.vcxproj">
+      <Project>{0fae4fdd-64e4-4084-aa32-2a00f9055746}</Project>
+      <Name>ProtocolCLIWrapper</Name>
+    </ProjectReference>
+    <ProjectReference Include="Network\ProtocolMinetest\ProtocolMinetest.csproj">
+      <Project>{69e3a62e-98e9-48d5-9bf0-836fff8bac9f}</Project>
+      <Name>ProtocolMinetest</Name>
+    </ProjectReference>
+    <ProjectReference Include="Network\ProtocolPocketEdition\ProtocolPocketEdition.csproj">
+      <Project>{3df15cbb-d75e-4cb1-8590-222062e9587f}</Project>
+      <Name>ProtocolPocketEdition</Name>
     </ProjectReference>
   </ItemGroup>
   <!-- Specify the search path explicitly so the ResolveAssemblyReferences task picks the right ones -->

@@ -93,7 +93,7 @@ namespace MineLib.Client
 
             _networkHandler = new NetworkHandler();
             var modules = _networkHandler.GetModules();
-            _networkHandler.Initialize(modules[0], this, true);
+            _networkHandler.Initialize(modules[1], this, true);
 
             return this;
         }
