@@ -45,15 +45,15 @@ namespace MineLib.Client.Graphics.Map
 				{
                     Chunks = new ChunkVBO[chunks.Count];
 
-				    for (int i = 0; i < chunks.Count; i++)
+                    for (int i = 0; i < Chunks.Length; i++)
 				    {
                         var coords = chunks[i].Coordinates;
 
-                        var front = FindChunk(chunks, coords + new Coordinates2D(0, 1));
-                        var back = FindChunk(chunks, coords + new Coordinates2D(0, -1));
+                        var front   = FindChunk(chunks, coords + new Coordinates2D( 0,  1));
+                        var back    = FindChunk(chunks, coords + new Coordinates2D( 0, -1));
 
-                        var right = FindChunk(chunks, coords + new Coordinates2D(-1, 0));
-                        var left = FindChunk(chunks, coords + new Coordinates2D(1, 0));
+                        var right   = FindChunk(chunks, coords + new Coordinates2D(-1,  0));
+                        var left    = FindChunk(chunks, coords + new Coordinates2D( 1,  0));
 
 				        Chunks[i] = new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right);
 				    }

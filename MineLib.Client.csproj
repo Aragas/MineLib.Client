@@ -88,11 +88,12 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <MonoGameContentReference Include="Content\Content.mgcb" />
+    <None Include="Content\Texture.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Content Include="Icon.ico" />
     <Content Include="Libraries\Ionic.Zip.Reduced.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Network\ProtocolModern\ProtocolModern.csproj">
@@ -119,6 +120,11 @@
       <Project>{3df15cbb-d75e-4cb1-8590-222062e9587f}</Project>
       <Name>ProtocolPocketEdition</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Content\VolterGoldfish.xnb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <!-- Specify the search path explicitly so the ResolveAssemblyReferences task picks the right ones -->
   <Target Name="BeforeResolveReferences">

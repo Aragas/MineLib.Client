@@ -79,7 +79,7 @@ namespace MineLib.Client.Graphics
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-			if (File.Exists(Path.Combine(Content.RootDirectory, "Texture.xnb")))
+			if (File.Exists(Path.Combine(Content.RootDirectory, "Texture.png")))
 				Blocks = Content.Load<Texture2D>("Texture");
 
             #region Load resources from minecraft.jar
