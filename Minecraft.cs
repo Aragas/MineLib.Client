@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using MineLib.Client.Data;
 using MineLib.Client.Data.BigData;
+
 using MineLib.Network;
 
 namespace MineLib.Client
@@ -63,7 +64,6 @@ namespace MineLib.Client
         public Player Player;
         public Dictionary<int, Entity> Entities;
         public Dictionary<string, short> PlayersList;
-        public PlayerTickHandler PlayerHandler;
 
         private INetworkHandler _networkHandler;
 
@@ -96,12 +96,6 @@ namespace MineLib.Client
             _networkHandler.Initialize(modules[1], this, true);
 
             return this;
-        }
-
-        private void StartPlayerTickHandler()
-        {
-            PlayerHandler = new PlayerTickHandler(this);
-            PlayerHandler.Start();
         }
 
         /// <summary>

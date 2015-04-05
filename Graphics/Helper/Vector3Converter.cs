@@ -12,7 +12,7 @@
             return new Network.Data.Vector3(vector.X, vector.Y, vector.Z);
         }
 
-        public static Microsoft.Xna.Framework.Vector3 ToVector3(this Network.Data.Position pos)
+        public static Microsoft.Xna.Framework.Vector3 ToXNAVector3(this Network.Data.Position pos)
         {
             return new Microsoft.Xna.Framework.Vector3(pos.X, pos.Y, pos.Z);
         }

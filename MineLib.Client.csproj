@@ -60,7 +60,6 @@
     <Compile Include="Minecraft.AsyncSending.cs" />
     <Compile Include="Minecraft.Client.cs" />
     <Compile Include="Minecraft.cs" />
-    <Compile Include="PlayerHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -96,6 +95,10 @@
     <Content Include="Libraries\Ionic.Zip.Reduced.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Network\ProtocolCLIWrapper\ProtocolCLIWrapper.vcxproj">
+      <Project>{0fae4fdd-64e4-4084-aa32-2a00f9055746}</Project>
+      <Name>ProtocolCLIWrapper</Name>
+    </ProjectReference>
     <ProjectReference Include="Network\ProtocolModern\ProtocolModern.csproj">
       <Project>{1360e652-2f92-4245-b3ad-0ec4d73e2945}</Project>
       <Name>ProtocolModern</Name>
@@ -107,10 +110,6 @@
     <ProjectReference Include="Network\ProtocolClassic\ProtocolClassic.csproj">
       <Project>{bdaddf68-34a0-41c9-8728-8de743cc4383}</Project>
       <Name>ProtocolClassic</Name>
-    </ProjectReference>
-    <ProjectReference Include="Network\ProtocolCLIWrapper\ProtocolCLIWrapper.vcxproj">
-      <Project>{0fae4fdd-64e4-4084-aa32-2a00f9055746}</Project>
-      <Name>ProtocolCLIWrapper</Name>
     </ProjectReference>
     <ProjectReference Include="Network\ProtocolMinetest\ProtocolMinetest.csproj">
       <Project>{69e3a62e-98e9-48d5-9bf0-836fff8bac9f}</Project>

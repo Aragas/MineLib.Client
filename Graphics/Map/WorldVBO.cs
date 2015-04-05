@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using MineLib.Network.Data;
@@ -79,17 +78,14 @@ namespace MineLib.Client.Graphics.Map
                         Chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 		}
 
-		public void UpdateSection(Section section)
+        public void UpdateSection(int sectionIndex, Chunk center, Chunk front, Chunk back, Chunk left, Chunk right)
 		{
-            /*
-		    int index = section.ChunkPosition.Y;
-
-		    for (int i = 0; i < Chunks.Length; i++)
-		    {
-                if (Chunks[i].Coordinates2D == new Coordinates2D(section.ChunkPosition.X, section.ChunkPosition.Z))
-                    Chunks[i].UpdateSection(section);
-		    }
-            */
+            // TODO: Do it normal
+            
+            if (Chunks != null)
+                for (int i = 0; i < Chunks.Length; i++)
+                    if (Chunks[i].Coordinates2D == center.Coordinates)
+                        Chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 		}
 
 	    public void Update()
@@ -102,59 +98,30 @@ namespace MineLib.Client.Graphics.Map
 
         public void Draw(Camera camera)
         {
-            BasicEffect.Projection = camera.Projection;
-            BasicEffect.View = camera.View;
+            BasicEffect.Projection              = camera.Projection;
+            BasicEffect.View                    = camera.View;
 
-            //GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-            GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-            //GraphicsDevice.BlendState = BlendState.AlphaBlend;
-            //GraphicsDevice.BlendState = new BlendState
-            //{
-            //    AlphaSourceBlend = Blend.SourceAlpha,
-            //    AlphaDestinationBlend = Blend.InverseSourceAlpha,
-            //    ColorSourceBlend = Blend.SourceAlpha,
-            //    ColorDestinationBlend = Blend.InverseSourceAlpha,
-            //};
-            //GraphicsDevice.BlendState = BlendState.Opaque;
+            var preDepthStencilState            = GraphicsDevice.DepthStencilState;
+            var preSamplerState                 = GraphicsDevice.SamplerStates[0];
 
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            GraphicsDevice.DepthStencilState    = DepthStencilState.Default;
+            GraphicsDevice.SamplerStates[0]     = SamplerState.PointClamp;
+
 
             if (Chunks != null)
+            {
                 for (int i = 0; i < Chunks.Length; i++)
                     if (Chunks[i] != null)
-                        Chunks[i].Draw(BasicEffect);
-        }
+                        Chunks[i].DrawOpaque(BasicEffect);
 
-		public void Draw(Camera camera, Ray ray)
-		{
-			BasicEffect.Projection = camera.Projection;
-			BasicEffect.View = camera.View;
-
-			//GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-			GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-			//GraphicsDevice.BlendState = BlendState.AlphaBlend;
-			GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-
-            if (Chunks != null)
                 for (int i = 0; i < Chunks.Length; i++)
                     if (Chunks[i] != null)
-		                Chunks[i].Draw(BasicEffect, ray);
-		}
+                        Chunks[i].DrawTransparent(BasicEffect);
+            }
 
-        public void Draw(Camera camera, DRay rays)
-        {
-            BasicEffect.Projection = camera.Projection;
-            BasicEffect.View = camera.View;
 
-            //GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-            GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-            //GraphicsDevice.BlendState = BlendState.AlphaBlend;
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-
-            if(Chunks != null)
-                for (int i = 0; i < Chunks.Length; i++)
-                    if (Chunks[i] != null)
-                        Chunks[i].Draw(BasicEffect, rays);
+            GraphicsDevice.DepthStencilState    = preDepthStencilState;
+            GraphicsDevice.SamplerStates[0]     = preSamplerState;
         }
 	}
 }

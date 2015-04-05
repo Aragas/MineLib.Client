@@ -16,12 +16,10 @@ using MineLib.Network;
 
 namespace MineLib.Client.Graphics
 {
-    
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
     public class Client : Game
     {
+        public static int Chunks;
+
 		public static MinecraftTexturesStorage MinecraftTexturesStorage;
         public static Texture2D Blocks;
 		
@@ -63,6 +61,7 @@ namespace MineLib.Client.Graphics
             base.Initialize();
         }
 
+
         private void OnConnected(IAsyncResult ar)
         {
             _minecraft.BeginConnectToServer(OnJoinedServer, null);
@@ -74,6 +73,7 @@ namespace MineLib.Client.Graphics
 
             _minecraft.BeginSendClientInfo(null, null);
         }
+
 
         protected override void LoadContent()
         {
@@ -96,9 +96,7 @@ namespace MineLib.Client.Graphics
             Components.Add(_fps);
         }
 
-        protected override void UnloadContent()
-        {
-        }
+        protected override void UnloadContent() { }
 
 		KeyboardState oldState;
 		protected override void Update(GameTime gameTime)
@@ -133,6 +131,9 @@ namespace MineLib.Client.Graphics
 				}
 			}
 			oldState = newState;
+
+		    if (_minecraft != null)
+		        Chunks = _minecraft.World.Chunks.Count;
 
 
 	        _camera.Update(gameTime);

@@ -17,7 +17,7 @@ namespace MineLib.Client.Graphics.Data
 
         public override string ToString()
         {
-            return string.Format("X:{0}, Y:{1}, Z:{2}, {3}", Position.X, Position.Y, Position.Z, Block.ToString());
+            return string.Format("X:{0}, Y:{1}, Z:{2}, {3}", Position.X, Position.Y, Position.Z, Block);
         }
     }
 }

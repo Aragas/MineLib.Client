@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace MineLib.Client.Graphics
@@ -45,7 +42,7 @@ namespace MineLib.Client.Graphics
         {
             _cameraSpeed = speed;
 
-            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, Game.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1000.0f);
+            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, Game.GraphicsDevice.Viewport.AspectRatio, 0.05f, 5000.0f);
 
             MoveTo(position, rotation);
 			
@@ -158,84 +155,5 @@ namespace MineLib.Client.Graphics
             base.Update(gameTime);
         }
 
-        public Ray GetMouseRay(GraphicsDevice gd)
-        {
-            var MousePosition = Mouse.GetState().Position;
-
-            var nearsource = new Vector3(MousePosition.X, MousePosition.Y, 0.0f);
-            var farsource = new Vector3(MousePosition.X, MousePosition.Y, 1.0f);
-
-            var world = Matrix.CreateTranslation(0, 0, 0);
-
-            var nearPoint = gd.Viewport.Unproject(nearsource, Projection, View, world);
-            var farPoint = gd.Viewport.Unproject(farsource, Projection, View, world);
-
-            var direction = farPoint - nearPoint;
-            direction.Normalize();
-            return new Ray(nearPoint, direction);
-        }
-
-        public DRay GetMouseRays(GraphicsDevice gd, int w, int h)
-        {
-            var rays = new List<Ray>();
-            var MousePosition = Mouse.GetState().Position;
-
-            var width = gd.Viewport.Width;
-            var height = gd.Viewport.Height;
-            for (int i = w; i > 0; i--)
-            {
-                for (int j = h; j > 0; j--)
-                {
-                    var nearsource = new Vector3(width / i, height / j, 0.0f);
-                    var farsource = new Vector3(width / i, height / j, 1.0f);
-                    var world = Matrix.CreateTranslation(0, 0, 0);
-                    var nearPoint = gd.Viewport.Unproject(nearsource, Projection, View, world);
-                    var farPoint = gd.Viewport.Unproject(farsource, Projection, View, world);
-                    var direction = farPoint - nearPoint;
-                    direction.Normalize();
-                    rays.Add(new Ray(nearPoint, direction)); 
-                }
-            }
-            return new DRay(rays, Position);
-        }
-
-        public List<Ray> GetMouseRays1(GraphicsDevice gd, float wPres, float hPres)
-        {
-            List<Ray> rays = new List<Ray>();
-            var MousePosition = Mouse.GetState().Position;
-
-            var width = gd.Viewport.Width;
-            var height = gd.Viewport.Height;
-            var wcount = width / wPres;
-            var hcount = height / hPres;
-            for (int i = (int)-wcount; i < (int)wcount; i++)
-                for (int j = (int)-hcount; j < (int)hcount; j++)
-                {
-                    Vector3 nearsource = new Vector3(MousePosition.X, MousePosition.Y, 0.0f) + new Vector3(i * 50f, j * 50, 0f);
-                    Vector3 farsource = new Vector3(MousePosition.X, MousePosition.Y, 1.0f) + new Vector3(i * 50f, j * 50, 0f);
-                    Matrix world = Matrix.CreateTranslation(0, 0, 0);
-                    Vector3 nearPoint = gd.Viewport.Unproject(nearsource, Projection, View, world);
-                    Vector3 farPoint = gd.Viewport.Unproject(farsource, Projection, View, world);
-                    Vector3 direction = farPoint - nearPoint;
-                    direction.Normalize();
-                    rays.Add(new Ray(nearPoint, direction));
-                }
-
-
-            return rays;
-        }
-
-    }
-
-    public struct DRay
-    {
-        public List<Ray> Rays;
-        public Vector3 CamPosition;
-
-        public DRay(List<Ray> rays, Vector3 camPosition)
-        {
-            Rays = rays;
-            CamPosition = camPosition;
-        }
     }
 }

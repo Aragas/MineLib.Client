@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using MineLib.Client.Graphics.Data;
+
 using MineLib.Network.Data;
 using MineLib.Network.Data.Anvil;
 
@@ -14,11 +14,13 @@ namespace MineLib.Client.Graphics.Map
 	    GraphicsDevice GraphicsDevice { get; set; }
         IndexBuffer IndexBuffer { get; set; }
 	    VertexBuffer Buffer { get; set; }
-        int PrimitiveCount { get; set; }
+
+        int OpaqueVerticlesCount { get; set; }
 
 
         public List<SectionVBO> Sections { get; private set; }
         public Coordinates2D Coordinates2D { get; private set; }
+
 
 		public ChunkVBO(GraphicsDevice device, Chunk chunk)
 		{
@@ -30,7 +32,6 @@ namespace MineLib.Client.Graphics.Map
 		        if (chunk.Sections[i].IsFilled)
                     Sections.Add(new SectionVBO(chunk.Sections[i]));
 		    
-
 		    BindBuffer(Sections);
 		}
 
@@ -50,7 +51,7 @@ namespace MineLib.Client.Graphics.Map
             Sections = new List<SectionVBO>();
             for (int i = 0; i < center.Sections.Length; i++)
             {
-                if (!center.Sections[i].IsFilled) 
+                if (!center.Sections[i].IsFilled)
                     continue;
 
                 if (front   == null)    front   = new Chunk(Coordinates2D.Zero);
@@ -59,11 +60,13 @@ namespace MineLib.Client.Graphics.Map
                 if (right   == null)    right   = new Chunk(Coordinates2D.Zero);
                 var top = new Section(Position.Zero); if (i > 0) top = center.Sections[i - 1];
                 var bottom = new Section(Position.Zero);    if (i < center.Sections.Length - 1) bottom = center.Sections[i + 1];
+
                 Sections.Add(new SectionVBO(center.Sections[i], front.Sections[i], back.Sections[i], left.Sections[i], right.Sections[i], top, bottom));
             }
 
             BindBuffer(Sections);
         }
+
 
         public void UpdateSection(Section section, Section front, Section back, Section left, Section right, Section top, Section bottom)
         {
@@ -94,29 +97,31 @@ namespace MineLib.Client.Graphics.Map
             BindBuffer(Sections);
 		}
 
+
 		private void BindBuffer(List<SectionVBO> sectionsVbo)
 		{
-			PrimitiveCount = 0;
-
-            var verticies = new List<VertexPositionColorHalfTexture>();
+            var opaque = new List<VertexPositionColorHalfTexture>();
+            var transparent = new List<VertexPositionColorHalfTexture>();
 			for (int i = 0; i < sectionsVbo.Count; i++)
 			    if (sectionsVbo[i].IsFilled)
 			    {
-			        verticies.AddRange(sectionsVbo[i].Vertices);
-                    sectionsVbo[i].Vertices = new List<VertexPositionColorHalfTexture>();
+                    opaque.AddRange(sectionsVbo[i].OpaqueVerticies);
+                    transparent.AddRange(sectionsVbo[i].TransparentVerticies);
+                    sectionsVbo[i].ClearVerticies();
 			    }
-			
 
-            PrimitiveCount = verticies.Count;
-            if (PrimitiveCount <= 0)
-                return;
+            OpaqueVerticlesCount = opaque.Count;
+            opaque.AddRange(transparent);
+            transparent.Clear();
 
-            Buffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorHalfTexture), PrimitiveCount, BufferUsage.WriteOnly);
-            Buffer.SetData(verticies.ToArray());
-            verticies.Clear();
+		    if (opaque.Count > 0)
+		    {
+                Buffer = new VertexBuffer(GraphicsDevice, VertexPositionColorHalfTexture.VertexDeclaration, opaque.Count, BufferUsage.None);
+                Buffer.SetData(opaque.ToArray());
+		        opaque.Clear(); 
+		    }
 
-
-            //var indicies = new List<short>();
+		    //var indicies = new List<short>();
             //for (int i = 0; i < sectionsVbo.Count; i++) { }
 
             //IndexBuffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, sizeof(short) * 0, BufferUsage.WriteOnly);
@@ -126,84 +131,35 @@ namespace MineLib.Client.Graphics.Map
 
 		public void Update() { }
 
-        public void Draw(BasicEffect effect)
+        public void DrawOpaque(BasicEffect effect)
         {
-            if(PrimitiveCount <= 0)
+            if (Buffer == null || Buffer.VertexCount <= 0)
                 return;
 
             GraphicsDevice.SetVertexBuffer(Buffer);
             //GraphicsDevice.Indices = IndexBuffer;
+
             foreach (var p in effect.CurrentTechnique.Passes)
             {
                 p.Apply();
-                
-                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, PrimitiveCount);
+
+                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, OpaqueVerticlesCount / 3);
             }
         }
 
-		public void Draw(BasicEffect effect, Ray ray)
-		{
-            if (PrimitiveCount <= 0)
+        public void DrawTransparent(BasicEffect effect)
+        {
+            if (Buffer == null || Buffer.VertexCount <= 0 || Buffer.VertexCount - OpaqueVerticlesCount <= 0)
                 return;
 
             GraphicsDevice.SetVertexBuffer(Buffer);
             //GraphicsDevice.Indices = IndexBuffer;
 
-			foreach (var p in effect.CurrentTechnique.Passes)
-			{
-				p.Apply();
-                
-                int offset = 0, length = 0;
-			    for (int i = 0; i < Sections.Count; i++)
-			    {
-			        if (Sections[i].Vertices.Count <= 0)
-			            continue;
-
-			        length += Sections[i].Vertices.Count;
-
-			        if (Sections[i].BoundingBox.Intersects(ray) != null)
-			            GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, length);
-
-
-			        offset += Sections[i].Vertices.Count;
-			    }
-			}
-		}
-
-        public void Draw(BasicEffect effect, DRay rays)
-        {
-            if (PrimitiveCount <= 0)
-                return;
-
-            GraphicsDevice.SetVertexBuffer(Buffer);
             foreach (var p in effect.CurrentTechnique.Passes)
             {
                 p.Apply();
 
-                int offset = 0, length = 0;
-                for (int i = 0; i < Sections.Count; i++)
-                {
-                    if (Sections[i].Vertices.Count <= 0)
-                        continue;
-
-                    length += Sections[i].Vertices.Count;
-
-                    for (int j = 0; j < rays.Rays.Count; j++)
-                    {
-                        var pos = new Microsoft.Xna.Framework.Vector3(Coordinates2D.X * 16, 16 * i, Coordinates2D.Z * 16);
-                        var pos1 = pos - rays.CamPosition;
-                        if (pos1.Length() > new Microsoft.Xna.Framework.Vector3(100).Length())
-                            Sections[i].IncreasedBoundingBox(new Microsoft.Xna.Framework.Vector3(16));
-
-                        if (Sections[i].BoundingBox.Intersects(rays.Rays[j]) != null)
-                        {
-                            GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, length);
-                            break;
-                        }
-                    }
-
-                    offset += Sections[i].Vertices.Count;
-                }
+                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, OpaqueVerticlesCount, (Buffer.VertexCount - OpaqueVerticlesCount) / 3);
             }
         }
 	}

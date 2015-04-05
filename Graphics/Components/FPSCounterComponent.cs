@@ -41,7 +41,7 @@ namespace MineLib.Client.Graphics.Components
 
             string fps = string.Format("FPS  : {0}",        _frameRate);
             string ram = string.Format("RAM : {0} (KB)",    GC.GetTotalMemory(false) / 1024);
-            string gpu = string.Format("GPU : {0} (KB)",    "Nope");
+            string gpu = string.Format("Chunks : {0} (KB)", Client.Chunks);
 
             DrawString(_spriteBatch, _spriteFont, Color.Black, fps, new Rectangle(1, 1, Game.Window.ClientBounds.Width, 30));
             DrawString(_spriteBatch, _spriteFont, Color.White, fps, new Rectangle(0, 0, Game.Window.ClientBounds.Width, 30));
