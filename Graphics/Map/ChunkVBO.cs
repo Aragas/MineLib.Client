@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using MineLib.Client.Graphics.Data;
@@ -15,8 +15,8 @@ namespace MineLib.Client.Graphics.Map
         IndexBuffer IndexBuffer { get; set; }
 	    VertexBuffer Buffer { get; set; }
 
-        int OpaqueVerticlesCount { get; set; }
-
+        int OpaqueVerticesCount { get; set; }
+        int TotalVerticesCount { get { return Buffer.VertexCount; } }
 
         public List<SectionVBO> Sections { get; private set; }
         public Coordinates2D Coordinates2D { get; private set; }
@@ -105,18 +105,18 @@ namespace MineLib.Client.Graphics.Map
 			for (int i = 0; i < sectionsVbo.Count; i++)
 			    if (sectionsVbo[i].IsFilled)
 			    {
-                    opaque.AddRange(sectionsVbo[i].OpaqueVerticies);
-                    transparent.AddRange(sectionsVbo[i].TransparentVerticies);
+                    opaque.AddRange(sectionsVbo[i].OpaqueVertices);
+                    transparent.AddRange(sectionsVbo[i].TransparentVertices);
                     sectionsVbo[i].ClearVerticies();
 			    }
 
-            OpaqueVerticlesCount = opaque.Count;
+            OpaqueVerticesCount = opaque.Count;
             opaque.AddRange(transparent);
             transparent.Clear();
 
 		    if (opaque.Count > 0)
 		    {
-                Buffer = new VertexBuffer(GraphicsDevice, VertexPositionColorHalfTexture.VertexDeclaration, opaque.Count, BufferUsage.None);
+                Buffer = new VertexBuffer(GraphicsDevice, VertexPositionColorHalfTexture.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
                 Buffer.SetData(opaque.ToArray());
 		        opaque.Clear(); 
 		    }
@@ -133,7 +133,7 @@ namespace MineLib.Client.Graphics.Map
 
         public void DrawOpaque(BasicEffect effect)
         {
-            if (Buffer == null || Buffer.VertexCount <= 0)
+            if (Buffer == null || TotalVerticesCount <= 0)
                 return;
 
             GraphicsDevice.SetVertexBuffer(Buffer);
@@ -143,13 +143,13 @@ namespace MineLib.Client.Graphics.Map
             {
                 p.Apply();
 
-                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, OpaqueVerticlesCount / 3);
+                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, OpaqueVerticesCount / 3);
             }
         }
 
         public void DrawTransparent(BasicEffect effect)
         {
-            if (Buffer == null || Buffer.VertexCount <= 0 || Buffer.VertexCount - OpaqueVerticlesCount <= 0)
+            if (Buffer == null || TotalVerticesCount <= 0 || Buffer.VertexCount - OpaqueVerticesCount <= 0)
                 return;
 
             GraphicsDevice.SetVertexBuffer(Buffer);
@@ -159,7 +159,61 @@ namespace MineLib.Client.Graphics.Map
             {
                 p.Apply();
 
-                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, OpaqueVerticlesCount, (Buffer.VertexCount - OpaqueVerticlesCount) / 3);
+                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, OpaqueVerticesCount, (TotalVerticesCount - OpaqueVerticesCount) / 3);
+            }
+        }
+
+
+        public void DrawOpaque(BasicEffect effect, BoundingFrustum boundingFrustum)
+        {
+            if (Buffer == null || TotalVerticesCount <= 0)
+                return;
+
+            GraphicsDevice.SetVertexBuffer(Buffer);
+            //GraphicsDevice.Indices = IndexBuffer;
+
+            foreach (var p in effect.CurrentTechnique.Passes)
+            {
+                p.Apply();
+
+                var offset = 0;
+                foreach (var section in Sections)
+                {
+                    if (section.OpaqueVerticesCount > 0 && boundingFrustum.Intersects(section.BoundingBox))
+                    {
+                        WorldVBO.DrawingOpaqueSections++;
+                        GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, section.OpaqueVerticesCount / 3);
+                    }
+
+                    offset += section.OpaqueVerticesCount;
+                }
+            }
+        }
+
+        public void DrawTransparent(BasicEffect effect, BoundingFrustum boundingFrustum)
+        {
+            if (Buffer == null || TotalVerticesCount <= 0 || TotalVerticesCount - OpaqueVerticesCount <= 0)
+                return;
+
+            GraphicsDevice.SetVertexBuffer(Buffer);
+            //GraphicsDevice.Indices = IndexBuffer;
+
+            foreach (var p in effect.CurrentTechnique.Passes)
+            {
+                p.Apply();
+
+                var offset = OpaqueVerticesCount;
+                foreach (var section in Sections)
+                {
+                    var transparent = section.TotalVerticesCount - section.OpaqueVerticesCount;
+                    if (transparent > 0 && boundingFrustum.Intersects(section.BoundingBox))
+                    {
+                        WorldVBO.DrawingTransparentSections++;
+                        GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, transparent / 3);
+                    }
+
+                    offset += transparent;
+                }
             }
         }
 	}

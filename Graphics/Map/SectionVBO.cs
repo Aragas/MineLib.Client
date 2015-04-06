@@ -11,14 +11,15 @@ namespace MineLib.Client.Graphics.Map
 {
     public class SectionVBO
     {
-        public bool IsFilled { get { return PrimitiveCount > 0; } }
+        public bool IsFilled { get { return TotalVerticesCount > 0; } }
 
         public BoundingBox BoundingBox { get; private set; }
 
-        public List<VertexPositionColorHalfTexture> OpaqueVerticies { get; private set; }
-        public List<VertexPositionColorHalfTexture> TransparentVerticies { get; private set; }
+        public List<VertexPositionColorHalfTexture> OpaqueVertices { get; private set; }
+        public List<VertexPositionColorHalfTexture> TransparentVertices { get; private set; }
 
-        public int PrimitiveCount { get; private set; }
+        public int OpaqueVerticesCount { get; private set; }
+        public int TotalVerticesCount { get; private set; }
         public Vector3 GlobalPos { get; private set; }
 
         public SectionVBO(Section section)
@@ -26,22 +27,24 @@ namespace MineLib.Client.Graphics.Map
             var chunkPos = section.ChunkPosition.ToXNAVector3();
             GlobalPos = chunkPos * new Vector3(Section.Width, Section.Height, Section.Depth);
 
-            var topFrontLeft = GlobalPos + new Vector3(16, 0, 0);
-            var bottomBackRight = GlobalPos + new Vector3(0, 16, 16);
+            var topFrontRight = GlobalPos + new Vector3(0, 0, 0);
+            var bottomBackLeft = GlobalPos + new Vector3(16, 16, 16);
 
-            BoundingBox = new BoundingBox(topFrontLeft, bottomBackRight);
+            //BoundingBox = new BoundingBox(topFrontLeft, bottomBackRight);
+            BoundingBox = new BoundingBox(topFrontRight, bottomBackLeft);
 
-            OpaqueVerticies = new List<VertexPositionColorHalfTexture>();
-            TransparentVerticies = new List<VertexPositionColorHalfTexture>();
+            OpaqueVertices = new List<VertexPositionColorHalfTexture>();
+            TransparentVertices = new List<VertexPositionColorHalfTexture>();
             BuildInside(section);
 
-            PrimitiveCount = OpaqueVerticies.Count + TransparentVerticies.Count;
+            OpaqueVerticesCount = OpaqueVertices.Count;
+            TotalVerticesCount = OpaqueVertices.Count + TransparentVertices.Count;
         }
 
         public SectionVBO(List<VertexPositionColorHalfTexture> opaqueVerticies, List<VertexPositionColorHalfTexture> transparentVerticies)
         {
-            OpaqueVerticies = opaqueVerticies;
-            TransparentVerticies = transparentVerticies;
+            OpaqueVertices = opaqueVerticies;
+            TransparentVertices = transparentVerticies;
         }
 
         public SectionVBO(Section center, Section front, Section back, Section left, Section right, Section top, Section bottom) : this(center)
@@ -64,7 +67,8 @@ namespace MineLib.Client.Graphics.Map
             if (bottom != null && bottom.IsFilled)
                 BuildBottomBorders(center, bottom);
 
-            PrimitiveCount = OpaqueVerticies.Count + TransparentVerticies.Count;
+            OpaqueVerticesCount = OpaqueVertices.Count;
+            TotalVerticesCount = OpaqueVertices.Count + TransparentVertices.Count;
         }
 
         #region Build
@@ -83,46 +87,46 @@ namespace MineLib.Client.Graphics.Map
                         if (x > 0)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x - 1, y, z].Light, section.Blocks[x - 1, y, z].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x - 1, y, z].Light, section.Blocks[x - 1, y, z].SkyLight))));
                             else if (section.Blocks[x - 1, y, z].IsAir || section.Blocks[x - 1, y, z].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x - 1, y, z].Light, section.Blocks[x - 1, y, z].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x - 1, y, z].Light, section.Blocks[x - 1, y, z].SkyLight))));
                         }
                         if (x < Section.Width - 1)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x + 1, y, z].Light, section.Blocks[x + 1, y, z].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x + 1, y, z].Light, section.Blocks[x + 1, y, z].SkyLight))));
                             else if (section.Blocks[x + 1, y, z].IsAir || section.Blocks[x + 1, y, z].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x + 1, y, z].Light, section.Blocks[x + 1, y, z].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x + 1, y, z].Light, section.Blocks[x + 1, y, z].SkyLight))));
                         }
 
                         if (y > 0)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y - 1, z].Light, section.Blocks[x, y - 1, z].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y - 1, z].Light, section.Blocks[x, y - 1, z].SkyLight))));
                             else if (section.Blocks[x, y - 1, z].IsAir || section.Blocks[x, y - 1, z].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y - 1, z].Light, section.Blocks[x, y - 1, z].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y - 1, z].Light, section.Blocks[x, y - 1, z].SkyLight))));
                         }
                         if (y < Section.Height - 1)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y + 1, z].Light, section.Blocks[x, y + 1, z].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y + 1, z].Light, section.Blocks[x, y + 1, z].SkyLight))));
                             else if (section.Blocks[x, y + 1, z].IsAir || section.Blocks[x, y + 1, z].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y + 1, z].Light, section.Blocks[x, y + 1, z].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y + 1, z].Light, section.Blocks[x, y + 1, z].SkyLight))));
                         }
 
                         if (z > 0)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z - 1].Light, section.Blocks[x, y, z - 1].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z - 1].Light, section.Blocks[x, y, z - 1].SkyLight))));
                             else if (section.Blocks[x, y, z - 1].IsAir || section.Blocks[x, y, z - 1].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z - 1].Light, section.Blocks[x, y, z - 1].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z - 1].Light, section.Blocks[x, y, z - 1].SkyLight))));
                         }
                         if (z < Section.Depth - 1)
                         {
                             if (block.IsTransparent)
-                                TransparentVerticies.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z + 1].Light, section.Blocks[x, y, z + 1].SkyLight))));
+                                TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z + 1].Light, section.Blocks[x, y, z + 1].SkyLight))));
                             else if (section.Blocks[x, y, z + 1].IsAir || section.Blocks[x, y, z + 1].IsTransparent)
-                                OpaqueVerticies.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z + 1].Light, section.Blocks[x, y, z + 1].SkyLight))));
+                                OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, section.Blocks[x, y, z + 1].Light, section.Blocks[x, y, z + 1].SkyLight))));
                         }
                     }
         }
@@ -144,9 +148,9 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
@@ -168,9 +172,9 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
@@ -192,9 +196,9 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
@@ -216,9 +220,9 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
@@ -240,9 +244,9 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
@@ -264,27 +268,19 @@ namespace MineLib.Client.Graphics.Map
                         var block = new Block(oldSecBlock.ID, oldSecBlock.Meta, newSecBlock.Light, newSecBlock.SkyLight);
 
                         if (oldSecBlock.IsTransparent)
-                            TransparentVerticies.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, block)));
+                            TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, block)));
                         else
-                            OpaqueVerticies.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, block)));
+                            OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, block)));
                     }
                 }
         }
 
         #endregion Build
 
-        public void IncreasedBoundingBox(Vector3 vector3)
-        {
-            var topFrontLeft = GlobalPos + new Vector3(16 + vector3.X, 0 - vector3.Y, 0 - vector3.Z);
-            var bottomBackRight = GlobalPos + new Vector3(0 - vector3.X, 16 + vector3.Y, 16 + vector3.Z);
-
-            BoundingBox = new BoundingBox(topFrontLeft, bottomBackRight);
-        }
-
         public void ClearVerticies()
         {
-            OpaqueVerticies = new List<VertexPositionColorHalfTexture>();
-            TransparentVerticies = new List<VertexPositionColorHalfTexture>();
+            OpaqueVertices = new List<VertexPositionColorHalfTexture>();
+            TransparentVertices = new List<VertexPositionColorHalfTexture>();
         }
     }
 }

@@ -2,6 +2,7 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MineLib.Client.Graphics.Map;
 
 namespace MineLib.Client.Graphics.Components
 {
@@ -39,9 +40,11 @@ namespace MineLib.Client.Graphics.Components
 
             _frameCounter++;
 
-            string fps = string.Format("FPS  : {0}",        _frameRate);
-            string ram = string.Format("RAM : {0} (KB)",    GC.GetTotalMemory(false) / 1024);
-            string gpu = string.Format("Chunks : {0} (KB)", Client.Chunks);
+            string fps = string.Format("FPS  : {0}",                        _frameRate);
+            string ram = string.Format("RAM : {0} (KB)",                    GC.GetTotalMemory(false) / 1024);
+            string gpu = string.Format("Chunks : {0}",                 Client.Chunks);
+            string opa = string.Format("Opaque Sections : {0}",        WorldVBO.DrawingOpaqueSections);
+            string tra = string.Format("Transparent Sections : {0}",   WorldVBO.DrawingTransparentSections);
 
             DrawString(_spriteBatch, _spriteFont, Color.Black, fps, new Rectangle(1, 1, Game.Window.ClientBounds.Width, 30));
             DrawString(_spriteBatch, _spriteFont, Color.White, fps, new Rectangle(0, 0, Game.Window.ClientBounds.Width, 30));
@@ -51,6 +54,13 @@ namespace MineLib.Client.Graphics.Components
 
             DrawString(_spriteBatch, _spriteFont, Color.Black, gpu, new Rectangle(1, 61, Game.Window.ClientBounds.Width, 30));
             DrawString(_spriteBatch, _spriteFont, Color.White, gpu, new Rectangle(0, 60, Game.Window.ClientBounds.Width, 30));
+
+            DrawString(_spriteBatch, _spriteFont, Color.Black, opa, new Rectangle(1, 91, Game.Window.ClientBounds.Width, 30));
+            DrawString(_spriteBatch, _spriteFont, Color.White, opa, new Rectangle(0, 90, Game.Window.ClientBounds.Width, 30));
+
+            DrawString(_spriteBatch, _spriteFont, Color.Black, tra, new Rectangle(1, 121, Game.Window.ClientBounds.Width, 30));
+            DrawString(_spriteBatch, _spriteFont, Color.White, tra, new Rectangle(0, 120, Game.Window.ClientBounds.Width, 30));
+
 
             _spriteBatch.End();
         }

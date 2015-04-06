@@ -96,8 +96,13 @@ namespace MineLib.Client.Graphics.Map
                         Chunks[i].Update();
 		}
 
+        public static int DrawingOpaqueSections;
+        public static int DrawingTransparentSections;
         public void Draw(Camera camera)
         {
+            DrawingOpaqueSections = 0;
+            DrawingTransparentSections = 0;
+
             BasicEffect.Projection              = camera.Projection;
             BasicEffect.View                    = camera.View;
 
@@ -110,13 +115,15 @@ namespace MineLib.Client.Graphics.Map
 
             if (Chunks != null)
             {
-                for (int i = 0; i < Chunks.Length; i++)
-                    if (Chunks[i] != null)
-                        Chunks[i].DrawOpaque(BasicEffect);
+                var boundingFrustum = camera.BoundingFrustum;
 
                 for (int i = 0; i < Chunks.Length; i++)
                     if (Chunks[i] != null)
-                        Chunks[i].DrawTransparent(BasicEffect);
+                        Chunks[i].DrawOpaque(BasicEffect, boundingFrustum);
+
+                for (int i = 0; i < Chunks.Length; i++)
+                    if (Chunks[i] != null)
+                        Chunks[i].DrawTransparent(BasicEffect, boundingFrustum);
             }
 
 

@@ -13,7 +13,7 @@ namespace MineLib.Client.Graphics
         MouseState _currentMouseState;
         MouseState _prevMouseState;
 
-
+        
         public Vector3 Position
         {
             get { return _cameraPosition; }
@@ -37,6 +37,9 @@ namespace MineLib.Client.Graphics
         public Matrix Projection { get; private set; }
 
         public Matrix View { get { return Matrix.CreateLookAt(_cameraPosition, _cameraLookAt, Vector3.Up); } }
+
+        public BoundingFrustum BoundingFrustum { get { return new BoundingFrustum(View * Projection); } }
+
 
 	    public Camera(Game game, Vector3 position, Vector3 rotation, float speed) : base(game)
         {
@@ -154,6 +157,5 @@ namespace MineLib.Client.Graphics
 
             base.Update(gameTime);
         }
-
     }
 }

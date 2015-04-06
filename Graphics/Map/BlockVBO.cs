@@ -12,7 +12,7 @@ namespace MineLib.Client.Graphics.Map
         /// <summary>
         /// Build visible blocks that don't have any light
         /// </summary>
-	    public const bool BuildWithoutLight = false;
+	    public const bool BuildWithoutLight = true;
 
 		public const float Size = 0.5f;
 
