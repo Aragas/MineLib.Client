@@ -1,4 +1,0 @@
-[submodule "Network"]
-	path = Network
-	url = https://github.com/Aragas/MineLib.Network.Modular.git
-	branch = Test
