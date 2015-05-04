@@ -20,9 +20,8 @@ namespace MineLib.PCL.Graphics.Map
         Effect SolidBlockEffect;
 
         GraphicsDevice GraphicsDevice { get; set; }
-        BasicEffect BasicEffect { get; set; }
 
-        private ThreadSafeList<ChunkVBO> Chunks { get; set; }
+        ThreadSafeList<ChunkVBO> Chunks { get; set; }
 
         Task _builder;
 
@@ -64,9 +63,9 @@ namespace MineLib.PCL.Graphics.Map
 
 	    private void BuildWorker(Chunk[] chunks)
 	    {
-	        Chunks = new ChunkVBO[chunks.Length];
+	        Chunks  = new ThreadSafeList<ChunkVBO>();//= new ChunkVBO[chunks.Length];
 
-	        for (int i = 0; i < Chunks.Length; i++)
+	        for (int i = 0; i < Chunks.Count; i++)
 	        {
 	            var coords = chunks[i].Coordinates;
 
@@ -92,7 +91,7 @@ namespace MineLib.PCL.Graphics.Map
         public void UpdateChunk(Chunk center, Chunk front, Chunk back, Chunk left, Chunk right)
 		{
             if (Chunks != null)
-			    for (int i = 0; i < Chunks.Length; i++)
+			    for (int i = 0; i < Chunks.Count; i++)
 				    if (Chunks[i].Coordinates2D == center.Coordinates)
                         Chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 		}
@@ -102,7 +101,7 @@ namespace MineLib.PCL.Graphics.Map
             // TODO: Do it normal
             
             if (Chunks != null)
-                for (int i = 0; i < Chunks.Length; i++)
+                for (int i = 0; i < Chunks.Count; i++)
                     if (Chunks[i].Coordinates2D == center.Coordinates)
                         Chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 		}
@@ -110,7 +109,7 @@ namespace MineLib.PCL.Graphics.Map
 	    public void Update()
 		{
             if (Chunks != null)
-                for (int i = 0; i < Chunks.Length; i++)
+                for (int i = 0; i < Chunks.Count; i++)
                     if (Chunks[i] != null)
                         Chunks[i].Update();
 		}
@@ -122,32 +121,35 @@ namespace MineLib.PCL.Graphics.Map
             DrawingOpaqueSections = 0;
             DrawingTransparentSections = 0;
 
-            BasicEffect.Projection              = camera.Projection;
-            BasicEffect.View                    = camera.View;
+            var projection = camera.Projection;
+            var view = camera.View;
 
             var preDepthStencilState            = GraphicsDevice.DepthStencilState;
-            var preSamplerState                 = GraphicsDevice.SamplerStates[0];
 
             GraphicsDevice.DepthStencilState    = DepthStencilState.Default;
-            GraphicsDevice.SamplerStates[0]     = SamplerState.PointClamp;
 
+            SolidBlockEffect.Parameters["View"].SetValue(view);
+            SolidBlockEffect.Parameters["Projection"].SetValue(projection);
 
-            if (Chunks != null)
+            foreach (EffectPass pass in SolidBlockEffect.CurrentTechnique.Passes)
             {
-                var boundingFrustum = camera.BoundingFrustum;
+                pass.Apply();
 
-                for (int i = 0; i < Chunks.Length; i++)
-                    if (Chunks[i] != null)
-                        Chunks[i].DrawOpaque(BasicEffect, boundingFrustum);
+                if (Chunks != null)
+                {
+                    var boundingFrustum = camera.BoundingFrustum;
 
-                for (int i = 0; i < Chunks.Length; i++)
-                    if (Chunks[i] != null)
-                        Chunks[i].DrawTransparent(BasicEffect, boundingFrustum);
+                    for (int i = 0; i < Chunks.Count; i++)
+                        if (Chunks[i] != null)
+                            Chunks[i].DrawOpaque(boundingFrustum);
+
+                    for (int i = 0; i < Chunks.Count; i++)
+                        if (Chunks[i] != null)
+                            Chunks[i].DrawTransparent(boundingFrustum);
+                }
             }
 
-
             GraphicsDevice.DepthStencilState    = preDepthStencilState;
-            GraphicsDevice.SamplerStates[0]     = preSamplerState;
         }
 	}
 }

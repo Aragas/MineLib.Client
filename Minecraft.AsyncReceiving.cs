@@ -40,6 +40,8 @@ namespace MineLib.PCL
 
             RegisterReceiveEvent(typeof(OnBlockBreakAction), OnBlockBreakAction);
 
+            RegisterReceiveEvent(typeof(OnTimeUpdate), OnTimeUpdate);
+
         }
 
         public void DoReceiveEvent(Type asyncReceiveType, IAsyncReceive data)
@@ -164,6 +166,13 @@ namespace MineLib.PCL
         private void OnSetExperience(IAsyncReceive receiveEvent)
         {
             var data = (OnSetExperience) receiveEvent;
+        }
+
+        private void OnTimeUpdate(IAsyncReceive receiveEvent)
+        {
+            var data = (OnTimeUpdate)receiveEvent;
+            World.AgeOfTheWorld = data.WorldAge;
+            World.TimeOfDay = data.TimeOfDay;
         }
     }
 }

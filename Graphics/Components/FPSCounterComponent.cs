@@ -39,8 +39,8 @@ namespace MineLib.PCL.Graphics.Components
 
             _frameCounter++;
 
-            string fps = string.Format("FPS  : {0}",                        _frameRate);
-            string ram = string.Format("RAM : {0} (KB)",                    GC.GetTotalMemory(false) / 1024);
+            string fps = string.Format("FPS  : {0}",                   _frameRate);
+            string ram = string.Format("RAM : {0} (KB)",               GC.GetTotalMemory(false) / 1024);
             string gpu = string.Format("Chunks : {0}",                 Client.Chunks);
             string opa = string.Format("Opaque Sections : {0}",        WorldVBO.DrawingOpaqueSections);
             string tra = string.Format("Transparent Sections : {0}",   WorldVBO.DrawingTransparentSections);

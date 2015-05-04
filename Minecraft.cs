@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MineLib.Network;
-using MineLib.PCL.Data;
+using MineLib.Network.IO;
+using MineLib.Network.Module;
 using MineLib.PCL.Data.BigData;
 
 namespace MineLib.PCL
@@ -12,6 +13,10 @@ namespace MineLib.PCL
     /// </summary>
     public partial class Minecraft : IMinecraftClient
     {
+        public event Storage GetStorage;
+
+        public event LoadAssembly LoadAssembly;
+
         #region Properties
 
         public string AccessToken { get; set; }
@@ -50,7 +55,7 @@ namespace MineLib.PCL
 
         public string ServerMOTD { get; set; }
 
-        public NetworkMode Mode { get; private set; }
+        public ProtocolType Mode { get; private set; }
         public ConnectionState ConnectionState { get { return _networkHandler.ConnectionState; } }
 
 	    public bool Connected { get { return _networkHandler.Connected; } }
@@ -72,7 +77,7 @@ namespace MineLib.PCL
         /// <param name="mode"></param>
         /// <param name="nameVerification">To connect using Name Verification or not</param>
         /// <param name="serverSalt"></param>
-        public IMinecraftClient Initialize(string login, string password, NetworkMode mode, bool nameVerification = false, string serverSalt = null)
+        public IMinecraftClient Initialize(string login, string password, ProtocolType mode, INetworkTCP tcp, bool nameVerification = false, string serverSalt = null)
         {
             ClientLogin = login;
             ClientPassword = password;
@@ -88,7 +93,7 @@ namespace MineLib.PCL
 
             _networkHandler = new NetworkHandler();
             var modules = _networkHandler.GetModules();
-            _networkHandler.Initialize(ChoseModule(modules), this, true);
+            _networkHandler.Initialize(ChoseModule(modules), this, tcp, true);
 
             return this;
         }
@@ -98,23 +103,40 @@ namespace MineLib.PCL
             return modules[0];
         }
 
+        public void Connect(string ip, ushort port)
+        {
+            _networkHandler.Connect(ip, port);
+        }
+
+        public void Disconnect()
+        {
+            _networkHandler.Disconnect();
+        }
+
         /// <summary>
         /// Connects to the Minecraft Server. If connected, don't call EndConnect.
         /// </summary>
         /// <param name="ip">The IP of the server to connect to</param>
         /// <param name="port">The port of the server to connect to</param>
-        public async Task ConnectAsync(string ip, ushort port)
+        public IAsyncResult BeginConnect(string ip, ushort port, AsyncCallback asyncCallback, object state)
         {
             ServerHost = ip;
             ServerPort = port;
-
-            // -- Connect to the server and begin reading packets.
-            await _networkHandler.ConnectAsync(ip, port);
+            return _networkHandler.BeginConnect(ServerHost, ServerPort, asyncCallback, state);
         }
 
-        public async Task DisconnectAsync()
+        private void EndConnect(IAsyncResult asyncResult)
         {
-            await _networkHandler.DisconnectAsync();
+        }
+
+        public IAsyncResult BeginDisconnect(AsyncCallback asyncCallback, object state)
+        {
+            return _networkHandler.BeginDisconnect(asyncCallback, state);
+        }
+
+        public void EndDisconnect(IAsyncResult asyncResult)
+        {
+            _networkHandler.EndDisconnect(asyncResult);
         }
 
 

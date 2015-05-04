@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using MineLib.Network;
 using MineLib.Network.Data;
 using MineLib.Network.Data.Anvil;
-using ProtocolModern.Enum;
 
 namespace MineLib.PCL.Data.BigData
 {
@@ -36,9 +35,9 @@ namespace MineLib.PCL.Data.BigData
         public static List<IPacket> DamagedChunks = new List<IPacket>();
         // -- Debugging
 
-        public GameMode GameMode;
-        public Dimension Dimension;
-        public Difficulty Difficulty;
+        //public GameMode GameMode;
+        //public Dimension Dimension;
+        //public Difficulty Difficulty;
         public GameStateChanged StateChanged;
         public Position SpawnPosition;
 
@@ -200,7 +199,7 @@ namespace MineLib.PCL.Data.BigData
 
     public struct GameStateChanged
     {
-        public GameStateReason Reason;
+        //public GameStateReason Reason;
         public float Value;
     }
 
