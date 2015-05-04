@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
-
 using MineLib.Network.Data.Anvil;
 
-namespace MineLib.Client.Graphics.Data
+namespace MineLib.PCL.Graphics.Data
 {
     public struct BlockRenderInfo
     {

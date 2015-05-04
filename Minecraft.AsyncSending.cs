@@ -1,9 +1,8 @@
 ﻿using System;
-
 using MineLib.Network;
 using MineLib.Network.Data.Structs;
 
-namespace MineLib.Client
+namespace MineLib.PCL
 {
     public partial class Minecraft
     {

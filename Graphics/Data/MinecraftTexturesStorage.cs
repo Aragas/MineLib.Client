@@ -1,11 +1,6 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using Microsoft.Xna.Framework.Graphics;
 
-using Ionic.Zip;
-
-using Microsoft.Xna.Framework.Graphics;
-
-namespace MineLib.Client.Graphics.Data
+namespace MineLib.PCL.Graphics.Data
 {
     public struct GUITextures
     {
@@ -56,6 +51,7 @@ namespace MineLib.Client.Graphics.Data
         public Texture2D Book;
     }
 
+    /*
     public class MinecraftTexturesStorage
     {
         // -- Debugging
@@ -65,19 +61,37 @@ namespace MineLib.Client.Graphics.Data
         public GUITextures GUITextures;
 
         readonly GraphicsDevice _graphicsDevice;
-        readonly ZipFile _minecraftJar;
+        //readonly ZipFile _minecraftJar;
+        readonly ZlibStream _minecrafStream;
 
-        public MinecraftTexturesStorage(GraphicsDevice device, ZipFile minecraft)
+        public MinecraftTexturesStorage(GraphicsDevice device, ZlibStream minecrafStream)
         {
             _graphicsDevice = device;
-            _minecraftJar = minecraft;
+            //_minecraftJar = minecraft;
+            _minecrafStream = minecrafStream;
         }
 
         public void ParseGUITextures()
         {
+            using (ZipArchive archive = new ZipArchive(storageFile))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    using (Stream fileinzipstream = entry.Open())
+                    {
+                        using (IsolatedStorageFileStream fileStream = isf.OpenFile(entry.FullName, FileMode.Create))
+                        {
+                            fileinzipstream.CopyTo(fileStream);
+                        }
+                    }
+                }
+            }
+
+
             GUITextures = new GUITextures();
             var ms = new MemoryStream();
             var selectCriteria = "name = assets/minecraft/textures/gui/*";
+
             foreach (var entry in _minecraftJar.SelectEntries(selectCriteria))
             {
                 switch (entry.FileName)
@@ -305,4 +319,5 @@ namespace MineLib.Client.Graphics.Data
             }
         }
     }
+    */
 }

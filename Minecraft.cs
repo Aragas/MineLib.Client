@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-
-using MineLib.Client.Data;
-using MineLib.Client.Data.BigData;
-
+using System.Threading.Tasks;
 using MineLib.Network;
+using MineLib.PCL.Data;
+using MineLib.PCL.Data.BigData;
 
-namespace MineLib.Client
+namespace MineLib.PCL
 {
     /// <summary>
     /// Wrapper for Network of MineLib.Net.
@@ -62,8 +61,6 @@ namespace MineLib.Client
 
         public World World;
         public Player Player;
-        public Dictionary<int, Entity> Entities;
-        public Dictionary<string, short> PlayersList;
 
         private INetworkHandler _networkHandler;
 
@@ -88,14 +85,17 @@ namespace MineLib.Client
 
             World = new World();
             Player = new Player();
-            Entities = new Dictionary<int, Entity>();
-            PlayersList = new Dictionary<string, short>();
 
             _networkHandler = new NetworkHandler();
             var modules = _networkHandler.GetModules();
-            _networkHandler.Initialize(modules[1], this, true);
+            _networkHandler.Initialize(ChoseModule(modules), this, true);
 
             return this;
+        }
+
+        public ProtocolModule ChoseModule(List<ProtocolModule> modules)
+        {
+            return modules[0];
         }
 
         /// <summary>
@@ -103,51 +103,18 @@ namespace MineLib.Client
         /// </summary>
         /// <param name="ip">The IP of the server to connect to</param>
         /// <param name="port">The port of the server to connect to</param>
-        public IAsyncResult BeginConnect(string ip, ushort port, AsyncCallback asyncCallback, object state)
+        public async Task ConnectAsync(string ip, ushort port)
         {
             ServerHost = ip;
             ServerPort = port;
 
             // -- Connect to the server and begin reading packets.
-            return _networkHandler.BeginConnect(ip, port, asyncCallback, state);
+            await _networkHandler.ConnectAsync(ip, port);
         }
 
-        private void EndConnect(IAsyncResult asyncResult)
+        public async Task DisconnectAsync()
         {
-            //_networkHandler.EndConnect(asyncResult);
-        }
-
-        public IAsyncResult BeginDisconnect(AsyncCallback asyncCallback, object state)
-        {
-            return _networkHandler.BeginDisconnect(asyncCallback, state);
-        }
-
-        public void EndDisconnect(IAsyncResult asyncResult)
-        {
-            _networkHandler.EndDisconnect(asyncResult);
-        }
-
-
-        /// <summary>
-        /// Connects to the Minecraft Server.
-        /// </summary>
-        /// <param name="ip">The IP of the server to connect to</param>
-        /// <param name="port">The port of the server to connect to</param>
-        public void Connect(string ip, ushort port)
-        {
-            ServerHost = ip;
-            ServerPort = port;
-
-            // -- Connect to the server and begin reading packets.
-            _networkHandler.Connect(ip, port);
-        }
-
-         /// <summary>
-        /// Disconnects from the Minecraft server.
-        /// </summary>
-        public void Disconnect()
-        {
-            _networkHandler.Disconnect();
+            await _networkHandler.DisconnectAsync();
         }
 
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MineLib.Network.Data;
 using MineLib.Network.Data.Structs;
 
-namespace MineLib.Client.Data.BigData
+namespace MineLib.PCL.Data.BigData
 {
     public class Player
     {

@@ -1,52 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Microsoft.Xna.Framework;
+using MineLib.PCL.Graphics.Data;
 
-using MineLib.Client.Graphics.Data;
-
-namespace MineLib.Client.Graphics.Map
+namespace MineLib.PCL.Graphics.Map
 {
 	public static class BlockVBO
 	{
-        /// <summary>
-        /// Build visible blocks that don't have any light
-        /// </summary>
-	    public const bool BuildWithoutLight = true;
+        public static bool BuildWithLight = true;
 
-		public const float Size = 0.5f;
+		public const float Size = 1f;
 
 	    private const float TextureScale	= 1f / 16f;
 		private const float ColorScale		= 1f / 32f;
+        private const float SkyLight        = 1f / 16f;
 
 
-	    public static List<VertexPositionColorHalfTexture> CubeFull(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFull(BlockRenderInfo renderInfo)
 	    {
-            var list = new List<VertexPositionColorHalfTexture>();
-            list.AddRange(CubeFaceFront(renderSide));
-            list.AddRange(CubeFaceBack(renderSide));
-            list.AddRange(CubeFaceTop(renderSide));
-            list.AddRange(CubeFaceBottom(renderSide));
-            list.AddRange(CubeFaceLeft(renderSide));
-            list.AddRange(CubeFaceRight(renderSide));
+            var list = new List<VertexPositionTextureLight>();
+            list.AddRange(CubeFaceFront(renderInfo));
+            list.AddRange(CubeFaceBack(renderInfo));
+            list.AddRange(CubeFaceTop(renderInfo));
+            list.AddRange(CubeFaceBottom(renderInfo));
+            list.AddRange(CubeFaceLeft(renderInfo));
+            list.AddRange(CubeFaceRight(renderInfo));
 
 	        return list;
 	    }
 
 
-		public static List<VertexPositionColorHalfTexture> CubeFaceFront(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceFront(BlockRenderInfo renderInfo)
         {
 			var indicies = new List<int>();
 			var verticles = new List<Vector3>();
-            var normals = new List<Color>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var topLeftFront    = renderSide.Position + new Vector3(-1.0f,  1.0f,  1.0f) * Size;    // b
-            var topRightFront   = renderSide.Position + new Vector3( 1.0f,  1.0f,  1.0f) * Size;    // b
-            var btmLeftFront    = renderSide.Position + new Vector3(-1.0f, -1.0f,  1.0f) * Size;    // b
-            var btmRightFront   = renderSide.Position + new Vector3( 1.0f, -1.0f,  1.0f) * Size;    // b
+            var topLeftFront    = renderInfo.Position + new Vector3(0.0f, 1.0f, 1.0f) * Size;    // b
+            var topRightFront   = renderInfo.Position + new Vector3(1.0f, 1.0f, 1.0f) * Size;    // b
+            var btmLeftFront    = renderInfo.Position + new Vector3(0.0f, 0.0f, 1.0f) * Size;    // b
+            var btmRightFront   = renderInfo.Position + new Vector3(1.0f, 0.0f, 1.0f) * Size;    // b
 
             verticles.Add(topLeftFront);	// v0-v1-v2
             verticles.Add(topRightFront);
@@ -67,7 +64,7 @@ namespace MineLib.Client.Graphics.Map
             #region Textures
 
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -118,42 +115,47 @@ namespace MineLib.Client.Graphics.Map
             #endregion Textures
 
             
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-		        return new List<VertexPositionColorHalfTexture>();
+			#region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
 
-			var normal = HsvToRgb(0, 0, light);
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
 
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
+            #endregion Light
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
 	    }
 
-        public static List<VertexPositionColorHalfTexture> CubeFaceBack(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceBack(BlockRenderInfo renderInfo)
         {
-			var indicies = new List<int>();
-			var verticles = new List<Vector3>();
-            var normals = new List<Color>();
+            var indicies = new List<int>();
+            var verticles = new List<Vector3>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var topLeftBack     = renderSide.Position + new Vector3(-1.0f,  1.0f, -1.0f) * Size;    // f
-            var topRightBack    = renderSide.Position + new Vector3( 1.0f,  1.0f, -1.0f) * Size;    // f
-            var btmLeftBack     = renderSide.Position + new Vector3(-1.0f, -1.0f, -1.0f) * Size;    // f
-            var btmRightBack    = renderSide.Position + new Vector3( 1.0f, -1.0f, -1.0f) * Size;    // f
+            var topLeftBack     = renderInfo.Position + new Vector3(0.0f, 1.0f, 0.0f) * Size;    // f
+            var topRightBack    = renderInfo.Position + new Vector3(1.0f, 1.0f, 0.0f) * Size;    // f
+            var btmLeftBack     = renderInfo.Position + new Vector3(0.0f, 0.0f, 0.0f) * Size;    // f
+            var btmRightBack    = renderInfo.Position + new Vector3(1.0f, 0.0f, 0.0f) * Size;    // f
 
             verticles.Add(topLeftBack);
             verticles.Add(btmLeftBack);
@@ -167,7 +169,7 @@ namespace MineLib.Client.Graphics.Map
 
             #region Textures
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -218,42 +220,47 @@ namespace MineLib.Client.Graphics.Map
             #endregion Textures
 
 
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-                return new List<VertexPositionColorHalfTexture>();
+            #region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
 
-			var normal = HsvToRgb(0, 0, light);
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
 
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
+            #endregion Light
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
         }
 
-        public static List<VertexPositionColorHalfTexture> CubeFaceTop(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceTop(BlockRenderInfo renderInfo)
         {
-			var indicies = new List<int>();
-			var verticles = new List<Vector3>();
-            var normals = new List<Color>();
+            var indicies = new List<int>();
+            var verticles = new List<Vector3>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var topLeftBack     = renderSide.Position + new Vector3(-1.0f,  1.0f, -1.0f) * Size;    // f
-            var topLeftFront    = renderSide.Position + new Vector3(-1.0f,  1.0f,  1.0f) * Size;    // b
-            var topRightBack    = renderSide.Position + new Vector3( 1.0f,  1.0f, -1.0f) * Size;    // f
-            var topRightFront   = renderSide.Position + new Vector3( 1.0f,  1.0f,  1.0f) * Size;    // b
+            var topLeftBack     = renderInfo.Position + new Vector3(0.0f, 1.0f, 0.0f) * Size;    // f
+            var topLeftFront    = renderInfo.Position + new Vector3(0.0f, 1.0f, 1.0f) * Size;    // b
+            var topRightBack    = renderInfo.Position + new Vector3(1.0f, 1.0f, 0.0f) * Size;    // f
+            var topRightFront   = renderInfo.Position + new Vector3(1.0f, 1.0f, 1.0f) * Size;    // b
 
             verticles.Add(topLeftBack);
             verticles.Add(topRightFront);
@@ -266,7 +273,7 @@ namespace MineLib.Client.Graphics.Map
 
             #region Textures
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -317,42 +324,47 @@ namespace MineLib.Client.Graphics.Map
             #endregion Textures
 
 
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-                return new List<VertexPositionColorHalfTexture>();
+            #region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
 
-			var normal = HsvToRgb(0, 0, light);
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
 
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
+            #endregion Light
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
         }
 
-        public static List<VertexPositionColorHalfTexture> CubeFaceBottom(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceBottom(BlockRenderInfo renderInfo)
         {
-			var indicies = new List<int>();
-			var verticles = new List<Vector3>();
-            var normals = new List<Color>();
+            var indicies = new List<int>();
+            var verticles = new List<Vector3>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var btmLeftBack     = renderSide.Position + new Vector3(-1.0f, -1.0f, -1.0f) * Size;    // f
-            var btmLeftFront    = renderSide.Position + new Vector3(-1.0f, -1.0f,  1.0f) * Size;    // b
-            var btmRightBack    = renderSide.Position + new Vector3( 1.0f, -1.0f, -1.0f) * Size;    // f
-            var btmRightFront   = renderSide.Position + new Vector3( 1.0f, -1.0f,  1.0f) * Size;    // b
+            var btmLeftBack     = renderInfo.Position + new Vector3(0.0f, 0.0f, 0.0f) * Size;    // f
+            var btmLeftFront    = renderInfo.Position + new Vector3(0.0f, 0.0f, 1.0f) * Size;    // b
+            var btmRightBack    = renderInfo.Position + new Vector3(1.0f, 0.0f, 0.0f) * Size;    // f
+            var btmRightFront   = renderInfo.Position + new Vector3(1.0f, 0.0f, 1.0f) * Size;    // b
 
             verticles.Add(btmLeftBack);
             verticles.Add(btmLeftFront);
@@ -365,7 +377,7 @@ namespace MineLib.Client.Graphics.Map
 
             #region Textures
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -416,42 +428,47 @@ namespace MineLib.Client.Graphics.Map
             #endregion Textures
 
 
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-                return new List<VertexPositionColorHalfTexture>();
+            #region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
 
-			var normal = HsvToRgb(0, 0, light);
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
 
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
+            #endregion Light
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
         }
 
-        public static List<VertexPositionColorHalfTexture> CubeFaceLeft(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceLeft(BlockRenderInfo renderInfo)
         {
-			var indicies = new List<int>();
-			var verticles = new List<Vector3>();
-            var normals = new List<Color>();
+            var indicies = new List<int>();
+            var verticles = new List<Vector3>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var topLeftBack     = renderSide.Position + new Vector3(-1.0f,  1.0f, -1.0f) * Size;    // f
-            var topLeftFront    = renderSide.Position + new Vector3(-1.0f,  1.0f,  1.0f) * Size;    // b
-            var btmLeftBack     = renderSide.Position + new Vector3(-1.0f, -1.0f, -1.0f) * Size;    // f
-            var btmLeftFront    = renderSide.Position + new Vector3(-1.0f, -1.0f,  1.0f) * Size;    // b
+            var topLeftBack     = renderInfo.Position + new Vector3(0.0f, 1.0f, 0.0f) * Size;    // f
+            var topLeftFront    = renderInfo.Position + new Vector3(0.0f, 1.0f, 1.0f) * Size;    // b
+            var btmLeftBack     = renderInfo.Position + new Vector3(0.0f, 0.0f, 0.0f) * Size;    // f
+            var btmLeftFront    = renderInfo.Position + new Vector3(0.0f, 0.0f, 1.0f) * Size;    // b
 
             verticles.Add(topLeftBack);
             verticles.Add(btmLeftFront);
@@ -464,7 +481,7 @@ namespace MineLib.Client.Graphics.Map
 
             #region Textures
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -513,44 +530,49 @@ namespace MineLib.Client.Graphics.Map
             textcoords.Add(textureBottomLeft);
             textcoords.Add(textureTopRight);
             #endregion Textures
-            
-
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-                return new List<VertexPositionColorHalfTexture>();
-
-			var normal = HsvToRgb(0, 0, light);
-
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            #region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+
+            #endregion Light
+
+
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
         }
 
-        public static List<VertexPositionColorHalfTexture> CubeFaceRight(BlockRenderInfo renderSide)
+        public static List<VertexPositionTextureLight> CubeFaceRight(BlockRenderInfo renderInfo)
         {
-	        var indicies = new List<int>();
+            var indicies = new List<int>();
             var verticles = new List<Vector3>();
-            var normals = new List<Color>();
             var textcoords = new List<Vector2>();
+            var skyLights = new List<float>();
+            var lights = new List<Color>();
 
 
             #region Verticies
-            var topRightBack    = renderSide.Position + new Vector3( 1.0f,  1.0f, -1.0f) * Size;    // f
-            var topRightFront   = renderSide.Position + new Vector3( 1.0f,  1.0f,  1.0f) * Size;    // b
-            var btmRightBack    = renderSide.Position + new Vector3( 1.0f, -1.0f, -1.0f) * Size;    // f
-            var btmRightFront   = renderSide.Position + new Vector3( 1.0f, -1.0f,  1.0f) * Size;    // b
+            var topRightBack    = renderInfo.Position + new Vector3(1.0f, 1.0f, 0.0f) * Size;    // f
+            var topRightFront   = renderInfo.Position + new Vector3(1.0f, 1.0f, 1.0f) * Size;    // b
+            var btmRightBack    = renderInfo.Position + new Vector3(1.0f, 0.0f, 0.0f) * Size;    // f
+            var btmRightFront   = renderInfo.Position + new Vector3(1.0f, 0.0f, 1.0f) * Size;    // b
 
             verticles.Add(topRightBack);
             verticles.Add(btmRightBack);
@@ -563,7 +585,7 @@ namespace MineLib.Client.Graphics.Map
 
             #region Textures
             var texture = new Vector2();
-            switch (renderSide.Block.ID)
+            switch (renderInfo.Block.ID)
             {
                 case 1:
                     texture = new Vector2(1, 0);
@@ -614,120 +636,48 @@ namespace MineLib.Client.Graphics.Map
             #endregion Textures
 
 
-			#region Normals
-			var light = renderSide.Block.Light * ColorScale + renderSide.Block.SkyLight * ColorScale;
-            if (light == 0 && !BuildWithoutLight)
-                return new List<VertexPositionColorHalfTexture>();
+            #region Light
+            var skyLight = renderInfo.Block.SkyLight * SkyLight;
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
+            skyLights.Add(skyLight);
 
-			var normal = HsvToRgb(0, 0, light);
+            var light = new Color(renderInfo.Block.Light, renderInfo.Block.Light, renderInfo.Block.Light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
+            lights.Add(light);
 
-			normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            #endregion Normals
+            #endregion Light
 
 
-            var list = new List<VertexPositionColorHalfTexture>();
+            var list = new List<VertexPositionTextureLight>();
             for (int i = 0; i < verticles.Count; i++)
-                list.Add(new VertexPositionColorHalfTexture(verticles[i], normals[i], textcoords[i]));
+                list.Add(new VertexPositionTextureLight(verticles[i], textcoords[i], skyLights[i], lights[i]));
 
             return list;
         }
 
 
-        private static Color HsvToRgb(double h, double s, double v)
-		{
-			// ######################################################################
-			// T. Nathan Mundhenk
-			// mundhenk@usc.edu
-			// C/C++ Macro HSV to RGB
+        private static Vector3 CalcNormal(Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            var V1 = (p2 - p1);
+            var V2 = (p3 - p1);
+            var surfaceNormal = new Vector3
+            {
+                X =   (V1.Y * V2.Z) - (V1.Z - V2.Y),
+                Y = -((V2.Z * V1.X) - (V2.X * V1.Z)),
+                Z =   (V1.X - V2.Y) - (V1.Y - V2.X)
+            };
 
-			double H = h;
-			while (H < 0) { H += 360; }
-			while (H >= 360) { H -= 360; }
-			double R, G, B;
-			if (v <= 0)
-			{ R = G = B = 0; }
-			else if (s <= 0)
-			{ R = G = B = v; }
-			else
-			{
-				double hf = H / 60.0;
-				int i = (int)Math.Floor(hf);
-				double f = hf - i;
-				double pv = v * (1 - s);
-				double qv = v * (1 - s * f);
-				double tv = v * (1 - s * (1 - f));
-				switch (i)
-				{
-					// Red is the dominant color
-					case 0:
-						R = v;
-						G = tv;
-						B = pv;
-						break;
 
-					// Green is the dominant color
-					case 1:
-						R = qv;
-						G = v;
-						B = pv;
-						break;
-					case 2:
-						R = pv;
-						G = v;
-						B = tv;
-						break;
-
-					// Blue is the dominant color
-					case 3:
-						R = pv;
-						G = qv;
-						B = v;
-						break;
-					case 4:
-						R = tv;
-						G = pv;
-						B = v;
-						break;
-
-					// Red is the dominant color
-					case 5:
-						R = v;
-						G = pv;
-						B = qv;
-						break;
-
-					// Just in case we overshoot on our math by a little, we put these here. Since its a switch it won't slow us down at all to put these here.
-					case 6:
-						R = v;
-						G = tv;
-						B = pv;
-						break;
-					case -1:
-						R = v;
-						G = pv;
-						B = qv;
-						break;
-
-					// The color is not defined, we should throw an error.
-					default:
-						//LFATAL("i Value error in Pixel conversion, Value is %d", i);
-						R = G = B = v; // Just pretend its black/white
-						break;
-				}
-			}
-			return new Color(Clamp((int)(R * 255.0)), Clamp((int)(G * 255.0)), Clamp((int)(B * 255.0)));
-		}
-
-		private static int Clamp(int i)
-		{
-			if (i < 0) return 0;
-			if (i > 255) return 255;
-			return i;
-		}
+            // Dont forget to colorize if needed
+            return surfaceNormal;
+        }
 	}
 }

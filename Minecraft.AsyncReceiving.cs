@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-
 using MineLib.Network;
 using MineLib.Network.Data.Anvil;
 
-namespace MineLib.Client
+namespace MineLib.PCL
 {
     public partial class Minecraft
     {
@@ -13,9 +11,9 @@ namespace MineLib.Client
 
         public void RegisterReceiveEvent(Type asyncReceiveType, Action<IAsyncReceive> method)
         {
-            var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
-            if (!any)
-                throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
+            //var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
+            //if (!any)
+            //    throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
 
             AsyncReceiveHandlers[asyncReceiveType] = method;
         }
@@ -46,9 +44,9 @@ namespace MineLib.Client
 
         public void DoReceiveEvent(Type asyncReceiveType, IAsyncReceive data)
         {
-            var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
-            if (!any)
-                throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
+            //var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
+            //if (!any)
+            //    throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
 
             if (!AsyncReceiveHandlers.ContainsKey(asyncReceiveType))
                 return;
@@ -63,6 +61,7 @@ namespace MineLib.Client
 
             ChatHistory.Add(data.Message);
         }
+
 
         #region Anvil
 
@@ -124,6 +123,7 @@ namespace MineLib.Client
         }
 
         #endregion
+
 
         private void OnPlayerPosition(IAsyncReceive receiveEvent)
         {

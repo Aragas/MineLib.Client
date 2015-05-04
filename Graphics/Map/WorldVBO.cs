@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
-
+using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-
 using MineLib.Network.Data;
 using MineLib.Network.Data.Anvil;
+using MineLib.PCL.Data.BigData;
 
-namespace MineLib.Client.Graphics.Map
+namespace MineLib.PCL.Graphics.Map
 {
     // -- +X - East
     // -- -X - West
@@ -15,55 +15,74 @@ namespace MineLib.Client.Graphics.Map
 
 	public class WorldVBO
 	{
+        public World World { get; set; }
+
+        Effect SolidBlockEffect;
+
         GraphicsDevice GraphicsDevice { get; set; }
         BasicEffect BasicEffect { get; set; }
 
-        ChunkVBO[] Chunks { get; set; }
+        private ThreadSafeList<ChunkVBO> Chunks { get; set; }
 
-		Thread _builder;
-		public WorldVBO(GraphicsDevice device, List<Chunk> chunks)
-		{
-		    GraphicsDevice = device;
-			BasicEffect = new BasicEffect(GraphicsDevice)
-			{
-				VertexColorEnabled = true,
-				LightingEnabled = false,
-				TextureEnabled = true,
-				Texture = Client.Blocks
-			};
-			//BasicEffect.EnableDefaultLighting();
+        Task _builder;
 
-			Build(chunks);
-		}
-
-		private void Build(List<Chunk> chunks)
-		{
-			if (_builder == null || !_builder.IsAlive)
-			{
-				_builder = new Thread(() =>
-				{
-                    Chunks = new ChunkVBO[chunks.Count];
-
-                    for (int i = 0; i < Chunks.Length; i++)
-				    {
-                        var coords = chunks[i].Coordinates;
-
-                        var front   = FindChunk(chunks, coords + new Coordinates2D( 0,  1));
-                        var back    = FindChunk(chunks, coords + new Coordinates2D( 0, -1));
-
-                        var right   = FindChunk(chunks, coords + new Coordinates2D(-1,  0));
-                        var left    = FindChunk(chunks, coords + new Coordinates2D( 1,  0));
-
-				        Chunks[i] = new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right);
-				    }
-				}) { Name = "WorldBuilder" };
-				_builder.Start();
-			}
-		}
-        
-        private static Chunk FindChunk(List<Chunk> chunks, Coordinates2D coords)
+	    public WorldVBO(GraphicsDevice device)
 	    {
-            for (int i = 0; i < chunks.Count; i++)
+	        GraphicsDevice = device;
+
+            SolidBlockEffect = Client.ContentManager.Load<Effect>("SolidBlockEffect");
+            SolidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+            SolidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+            SolidBlockEffect.Parameters["CubeTexture"].SetValue(Client.Blocks);
+	    }
+
+        public void Build()
+        {
+            try
+            {
+                if ((_builder == null) || _builder.IsCompleted)
+                {
+                    var chunks = new Chunk[World.Chunks.Count];
+                    World.Chunks.CopyTo(chunks);
+                    _builder = Task.Factory.StartNew(() => BuildWorker(chunks));
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public void Build(List<Chunk> chunks)
+        {
+            try
+            {
+                if (_builder == null || _builder.IsCompleted)
+                    _builder = Task.Factory.StartNew(() => BuildWorker(chunks.ToArray()));
+            }
+            catch { }
+        }
+
+	    private void BuildWorker(Chunk[] chunks)
+	    {
+	        Chunks = new ChunkVBO[chunks.Length];
+
+	        for (int i = 0; i < Chunks.Length; i++)
+	        {
+	            var coords = chunks[i].Coordinates;
+
+	            var front = FindChunk(chunks, coords + new Coordinates2D(0, 1));
+	            var back = FindChunk(chunks, coords + new Coordinates2D(0, -1));
+
+	            var right = FindChunk(chunks, coords + new Coordinates2D(-1, 0));
+	            var left = FindChunk(chunks, coords + new Coordinates2D(1, 0));
+
+	            Chunks[i] = new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right);
+	        }
+	    }
+
+	    private static Chunk FindChunk(Chunk[] chunks, Coordinates2D coords)
+	    {
+            for (int i = 0; i < chunks.Length; i++)
                 if (chunks[i].Coordinates == coords)
                     return chunks[i];
             

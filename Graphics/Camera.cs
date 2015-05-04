@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace MineLib.Client.Graphics
+namespace MineLib.PCL.Graphics
 {
     public class Camera : GameComponent
     {

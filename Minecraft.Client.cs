@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-
 using MineLib.Network.Data;
-
 using Newtonsoft.Json;
 
 // -- Use http://json2csharp.com/
-namespace MineLib.Client
+namespace MineLib.PCL
 {
     public partial class Minecraft
     {
