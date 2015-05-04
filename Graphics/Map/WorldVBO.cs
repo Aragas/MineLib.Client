@@ -39,7 +39,7 @@ namespace MineLib.PCL.Graphics.Map
         {
             try
             {
-                if ((_builder == null) || _builder.IsCompleted)
+                if (_builder == null || _builder.IsCompleted)
                 {
                     var chunks = new Chunk[World.Chunks.Count];
                     World.Chunks.CopyTo(chunks);
@@ -63,9 +63,8 @@ namespace MineLib.PCL.Graphics.Map
 
 	    private void BuildWorker(Chunk[] chunks)
 	    {
-	        Chunks  = new ThreadSafeList<ChunkVBO>();//= new ChunkVBO[chunks.Length];
-
-	        for (int i = 0; i < Chunks.Count; i++)
+            Chunks = new ThreadSafeList<ChunkVBO>();//= new ChunkVBO[chunks.Length];
+            for (int i = 0; i < chunks.Length; i++)
 	        {
 	            var coords = chunks[i].Coordinates;
 
@@ -75,7 +74,7 @@ namespace MineLib.PCL.Graphics.Map
 	            var right = FindChunk(chunks, coords + new Coordinates2D(-1, 0));
 	            var left = FindChunk(chunks, coords + new Coordinates2D(1, 0));
 
-	            Chunks[i] = new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right);
+	            Chunks.Add( new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right));
 	        }
 	    }
 
@@ -112,6 +111,9 @@ namespace MineLib.PCL.Graphics.Map
                 for (int i = 0; i < Chunks.Count; i++)
                     if (Chunks[i] != null)
                         Chunks[i].Update();
+
+            if (World != null)
+                SolidBlockEffect.Parameters["TimeOfDay"].SetValue(13f);
 		}
 
         public static int DrawingOpaqueSections;

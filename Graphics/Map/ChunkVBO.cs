@@ -231,17 +231,17 @@ namespace MineLib.PCL.Graphics.Map
 
             GraphicsDevice.SetVertexBuffer(Buffer);
 
+            int offset = OpaqueVerticesCount;
             foreach (var section in Sections)
             {
-                var offset = section.TotalVerticesCount - section.OpaqueVerticesCount;
-
-                if (offset > 0 && boundingFrustum.FastIntersect(section.BoundingBox))
+                var transparentCount = section.TotalVerticesCount - section.OpaqueVerticesCount;
+                if (transparentCount > 0 && boundingFrustum.FastIntersect(section.BoundingBox))
                 {
                     WorldVBO.DrawingTransparentSections++;
-                    GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, OpaqueVerticesCount, offset / 3);
+                    GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, transparentCount / 3);
                 }
 
-                OpaqueVerticesCount += offset;
+                offset += transparentCount;
             }
         }
 

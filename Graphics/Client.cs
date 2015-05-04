@@ -1,4 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.IO;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -7,17 +10,10 @@ using MineLib.Network;
 using MineLib.Network.IO;
 using MineLib.Network.Module;
 
-using MineLib.PCL;
 using MineLib.PCL.Graphics.Components;
 using MineLib.PCL.Graphics.Map;
 
 using PCLStorage;
-
-using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace MineLib.PCL.Graphics
 {
@@ -94,14 +90,10 @@ namespace MineLib.PCL.Graphics
 
         private void OnJoinedServer(IAsyncResult ar)
         {
-            while (_minecraft.ConnectionState != ConnectionState.Joined)
-            {
-            }
+            while (_minecraft.ConnectionState != ConnectionState.Joined) { }
             _minecraft.BeginSendClientInfo(null, null);
             _world = new WorldVBO(_graphics.GraphicsDevice);
-            while (_minecraft.World.Chunks.Count < 100)
-            {
-            }
+            while (_minecraft.World.Chunks.Count < 100) { }
             count = _minecraft.World.Chunks.Count;
             _world.World = _minecraft.World;
             _world.Build();
@@ -112,7 +104,7 @@ namespace MineLib.PCL.Graphics
         {
         }
 
-        private DateTime lastbuild = DateTime.MinValue;
+        private DateTime lastbuild = DateTime.UtcNow;
         private KeyboardState oldState;
 
         protected override void Update(GameTime gameTime)
@@ -122,7 +114,7 @@ namespace MineLib.PCL.Graphics
             if (_minecraft != null && _minecraft.World != null)
             {
                 Chunks = _minecraft.World.Chunks.Count;
-                if (Chunks > count && (DateTime.UtcNow - lastbuild > new TimeSpan(0, 0, 20)))
+                if (Chunks > count && DateTime.UtcNow - lastbuild > new TimeSpan(0, 0, 20))
                 {
                     _world.World = _minecraft.World;
                     _world.Build();
