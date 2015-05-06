@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -63,13 +63,9 @@ namespace MineLib.PCL.Graphics
 
             string ip;
             ushort port;
-            if (GetStorage != null &&
-                GetStorage(this).CheckExistsAsync("settings.txt").Result == ExistenceCheckResult.FileExists)
+            if (GetStorage != null &&GetStorage(this).CheckExistsAsync("settings.txt").Result == ExistenceCheckResult.FileExists)
             {
-                using (
-                    StreamReader reader =
-                        new StreamReader(
-                            GetStorage(this).GetFileAsync("settings.txt").Result.OpenAsync(FileAccess.Read).Result))
+                using (var reader = new StreamReader(GetStorage(this).GetFileAsync("settings.txt").Result.OpenAsync(FileAccess.Read).Result))
                 {
                     ip = reader.ReadLine();
                     port = ushort.Parse(reader.ReadLine());
@@ -80,7 +76,9 @@ namespace MineLib.PCL.Graphics
             _minecraft.GetStorage += GetStorage;
             _minecraft.Initialize("TestBot", "", ProtocolType.Module, _tcp, false, null);
             _minecraft.BeginConnect("192.168.1.53", 25565, OnConnected, null);
+
             _camera = new Camera(this, Vector3.Zero, Vector3.Zero, 25f);
+            Components.Add(_camera);
         }
 
         private void OnConnected(IAsyncResult ar)
@@ -90,10 +88,10 @@ namespace MineLib.PCL.Graphics
 
         private void OnJoinedServer(IAsyncResult ar)
         {
-            while (_minecraft.ConnectionState != ConnectionState.Joined) { }
+            while (_minecraft.ConnectionState != ConnectionState.Joined) { Task.Delay(200); }
             _minecraft.BeginSendClientInfo(null, null);
             _world = new WorldVBO(_graphics.GraphicsDevice);
-            while (_minecraft.World.Chunks.Count < 100) { }
+            while (_minecraft.World.Chunks.Count < 100) { Task.Delay(200); }
             count = _minecraft.World.Chunks.Count;
             _world.World = _minecraft.World;
             _world.Build();
@@ -105,11 +103,11 @@ namespace MineLib.PCL.Graphics
         }
 
         private DateTime lastbuild = DateTime.UtcNow;
-        private KeyboardState oldState;
+        //private KeyboardState oldState;
 
         protected override void Update(GameTime gameTime)
         {
-            _camera.Update(gameTime);
+            //_camera.Update(gameTime);
 
             if (_minecraft != null && _minecraft.World != null)
             {
@@ -121,25 +119,25 @@ namespace MineLib.PCL.Graphics
                     count = _minecraft.World.Chunks.Count;
                 }
             }
-            var state = Keyboard.GetState();
-            if (((!state.IsKeyDown(Keys.J) || oldState.IsKeyDown(Keys.J)) &&
-                 (!state.IsKeyDown(Keys.J) || !oldState.IsKeyDown(Keys.J))) &&
-                ((!state.IsKeyDown(Keys.J) && oldState.IsKeyDown(Keys.J)) && (_minecraft != null)))
-            {
-                _world.World = _minecraft.World;
-                _world.Build();
-            }
-            oldState = state;
+            //var state = Keyboard.GetState();
+            //if (((!state.IsKeyDown(Keys.J) || oldState.IsKeyDown(Keys.J)) &&
+            //     (!state.IsKeyDown(Keys.J) || !oldState.IsKeyDown(Keys.J))) &&
+            //    ((!state.IsKeyDown(Keys.J) && oldState.IsKeyDown(Keys.J)) && (_minecraft != null)))
+            //{
+            //    _world.World = _minecraft.World;
+            //    _world.Build();
+            //}
+            //oldState = state;
             if (_world != null)
-            {
                 _world.Update();
-            }
+            
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+
             if (_world != null)
                 _world.Draw(_camera);
 

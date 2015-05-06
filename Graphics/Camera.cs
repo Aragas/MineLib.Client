@@ -83,7 +83,6 @@ namespace MineLib.PCL.Graphics
             MoveTo(PreviewMove(scale), Rotation);
         }
 
-        private bool mouseOn;
         public override void Update(GameTime gameTime)
         {
             var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -97,17 +96,38 @@ namespace MineLib.PCL.Graphics
             var moveVector = Vector3.Zero;
 
             if (ks.IsKeyDown(Keys.W))
-                moveVector.Z = 1;
+                moveVector.Z = 1f;
             if (ks.IsKeyDown(Keys.S))
-                moveVector.Z = -1;
+                moveVector.Z = -1f;
             if (ks.IsKeyDown(Keys.A))
-                moveVector.X = 1;
+                moveVector.X = 1f;
             if (ks.IsKeyDown(Keys.D))
-                moveVector.X = -1;
-            if (ks.IsKeyDown(Keys.Space))
-                moveVector.Y = 1;
-            if (ks.IsKeyDown(Keys.LeftShift))
-                moveVector.Y = -1;
+                moveVector.X = -1f;
+            if (ks.IsKeyDown(Keys.Space) || ks.IsKeyDown(Keys.Q))
+                moveVector.Y = 1f;
+            if (ks.IsKeyDown(Keys.LeftShift) || ks.IsKeyDown(Keys.E))
+                moveVector.Y = -1f;
+
+            if (ks.IsKeyDown(Keys.Up))
+            {
+                _mouseRotationBuffer.Y += 1f * dt;
+                Rotation = new Vector3(-MathHelper.Clamp(_mouseRotationBuffer.Y, MathHelper.ToRadians(-75f), MathHelper.ToRadians(75f)), MathHelper.WrapAngle(_mouseRotationBuffer.X), 0f);
+            }
+            if (ks.IsKeyDown(Keys.Down))
+            {
+                _mouseRotationBuffer.Y -= 1f * dt;
+                Rotation = new Vector3(-MathHelper.Clamp(_mouseRotationBuffer.Y, MathHelper.ToRadians(-75f), MathHelper.ToRadians(75f)), MathHelper.WrapAngle(_mouseRotationBuffer.X), 0f);
+            }
+            if (ks.IsKeyDown(Keys.Left))
+            {
+                _mouseRotationBuffer.X += 1f * dt;
+                Rotation = new Vector3(-MathHelper.Clamp(_mouseRotationBuffer.Y, MathHelper.ToRadians(-75f), MathHelper.ToRadians(75f)), MathHelper.WrapAngle(_mouseRotationBuffer.X), 0f);
+            }
+            if (ks.IsKeyDown(Keys.Right))
+            {
+                _mouseRotationBuffer.X -= 1f * dt;
+                Rotation = new Vector3(-MathHelper.Clamp(_mouseRotationBuffer.Y, MathHelper.ToRadians(-75f), MathHelper.ToRadians(75f)), MathHelper.WrapAngle(_mouseRotationBuffer.X), 0f);
+            }
             //if (ks.IsKeyDown(Keys.O))
             //{
             //    mouseOn = !mouseOn;

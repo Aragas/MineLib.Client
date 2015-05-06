@@ -1,6 +1,15 @@
+#define PARALLEL
+
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+
+using Librainian.Collections;
+
 using Microsoft.Xna.Framework;
+
 using MineLib.Network.Data.Anvil;
+
 using MineLib.PCL.Graphics.Data;
 using MineLib.PCL.Graphics.Helper;
 
@@ -12,8 +21,8 @@ namespace MineLib.PCL.Graphics.Map
 
         public BoundingBox BoundingBox { get; private set; }
 
-        public List<VertexPositionTextureLight> OpaqueVertices { get; private set; }
-        public List<VertexPositionTextureLight> TransparentVertices { get; private set; }
+        public ThreadSafeList<VertexPositionTextureLight> OpaqueVertices { get; private set; }
+        public ThreadSafeList<VertexPositionTextureLight> TransparentVertices { get; private set; }
 
         public int OpaqueVerticesCount { get; private set; }
         public int TotalVerticesCount { get; private set; }
@@ -28,15 +37,27 @@ namespace MineLib.PCL.Graphics.Map
 
             BoundingBox = new BoundingBox(topFrontRight, bottomBackLeft);
 
-            OpaqueVertices = new List<VertexPositionTextureLight>();
-            TransparentVertices = new List<VertexPositionTextureLight>();
+            OpaqueVertices = new ThreadSafeList<VertexPositionTextureLight>();
+            TransparentVertices = new ThreadSafeList<VertexPositionTextureLight>();
+
+#if PARALLEL
+            ParallelOptions op = new ParallelOptions();
+            //op.MaxDegreeOfParallelism = 2;
+            Parallel.Invoke(op,
+                () => { BuildInsideX1(section); },
+                () => { BuildInsideX2(section); },
+                () => { BuildInsideX3(section); },
+                () => { BuildInsideX4(section); });
+#else
             BuildInside(section);
+#endif
 
             OpaqueVerticesCount = OpaqueVertices.Count;
             TotalVerticesCount = OpaqueVertices.Count + TransparentVertices.Count;
         }
 
-        public SectionVBO(List<VertexPositionTextureLight> opaqueVerticies, List<VertexPositionTextureLight> transparentVerticies)
+
+        public SectionVBO(ThreadSafeList<VertexPositionTextureLight> opaqueVerticies, ThreadSafeList<VertexPositionTextureLight> transparentVerticies)
         {
             OpaqueVertices = opaqueVerticies;
             TransparentVertices = transparentVerticies;
@@ -44,6 +65,33 @@ namespace MineLib.PCL.Graphics.Map
 
         public SectionVBO(Section center, Section front, Section back, Section left, Section right, Section top, Section bottom) : this(center)
         {
+            var actions = new List<Action>();
+
+#if PARALLEL
+            if (front != null && front.IsFilled)
+                actions.Add(() => { BuildFrontBorders(center, front); });
+
+            if (back != null && back.IsFilled)
+                actions.Add(() => { BuildBackBorders(center, back); });
+
+            if (left != null && left.IsFilled)
+                actions.Add(() => { BuildLeftBorders(center, left); });
+
+            if (right != null && right.IsFilled)
+                actions.Add(() => { BuildRightBorders(center, right); });
+
+            if (top != null && top.IsFilled)
+                actions.Add(() => { BuildTopBorders(center, top); });
+
+            if (bottom != null && bottom.IsFilled)
+                actions.Add(() => BuildBottomBorders(center, bottom));
+
+            ParallelOptions op = new ParallelOptions();
+            op.MaxDegreeOfParallelism = 4;
+            Parallel.Invoke(op, actions.ToArray());
+            //Parallel.ForEach(actions, action => action());
+#else
+
             if (front != null && front.IsFilled)
                 BuildFrontBorders(center, front);
 
@@ -61,12 +109,342 @@ namespace MineLib.PCL.Graphics.Map
 
             if (bottom != null && bottom.IsFilled)
                 BuildBottomBorders(center, bottom);
+#endif
 
             OpaqueVerticesCount = OpaqueVertices.Count;
             TotalVerticesCount = OpaqueVertices.Count + TransparentVertices.Count;
         }
 
         #region Build
+
+        private void BuildInsideX1(Section section)
+        {
+            for (int x = 0; x < Section.Width; x++)
+                for (int y = 0; y < Section.Height; y++)
+                    for (int z = 0; z < Section.Depth / 4; z++)
+                    {
+                        var block = section.Blocks[x, y, z];
+                        if (block.IsAir) continue;
+
+                        var pos = section.GetGlobalPositionByArrayIndex(x, y, z).ToXNAVector3();
+
+                        if (x > 0)
+                        {
+                            var tempBlock = section.Blocks[x - 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (x < Section.Width - 1)
+                        {
+                            var tempBlock = section.Blocks[x + 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange( BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (y > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y - 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (y < Section.Height - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y + 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (z > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y, z - 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (z < Section.Depth - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y, z + 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                    }
+        }
+
+        private void BuildInsideX2(Section section)
+        {
+            for (int x = 0; x < Section.Width; x++)
+                for (int y = 0; y < Section.Height; y++)
+                    for (int z = Section.Depth / 4; z < Section.Depth / 4 + Section.Depth / 4; z++)
+                    {
+                        var block = section.Blocks[x, y, z];
+                        if (block.IsAir) continue;
+
+                        var pos = section.GetGlobalPositionByArrayIndex(x, y, z).ToXNAVector3();
+
+                        if (x > 0)
+                        {
+                            var tempBlock = section.Blocks[x - 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (x < Section.Width - 1)
+                        {
+                            var tempBlock = section.Blocks[x + 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (y > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y - 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (y < Section.Height - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y + 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (z > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y, z - 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (z < Section.Depth - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y, z + 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                    }
+        }
+
+        private void BuildInsideX3(Section section)
+        {
+            for (int x = 0; x < Section.Width; x++)
+                for (int y = 0; y < Section.Height; y++)
+                    for (int z = Section.Depth / 4 + Section.Depth / 4; z < Section.Depth / 4 + Section.Depth / 4 + Section.Depth / 4; z++)
+                    {
+                        var block = section.Blocks[x, y, z];
+                        if (block.IsAir) continue;
+
+                        var pos = section.GetGlobalPositionByArrayIndex(x, y, z).ToXNAVector3();
+
+                        if (x > 0)
+                        {
+                            var tempBlock = section.Blocks[x - 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (x < Section.Width - 1)
+                        {
+                            var tempBlock = section.Blocks[x + 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (y > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y - 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (y < Section.Height - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y + 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (z > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y, z - 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (z < Section.Depth - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y, z + 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                    }
+        }
+
+        private void BuildInsideX4(Section section)
+        {
+            for (int x = 0; x < Section.Width; x++)
+                for (int y = 0; y < Section.Height; y++)
+                    for (int z = Section.Depth / 4 + Section.Depth / 4 + Section.Depth / 4; z < Section.Depth; z++)
+                    {
+                        var block = section.Blocks[x, y, z];
+                        if (block.IsAir) continue;
+
+                        var pos = section.GetGlobalPositionByArrayIndex(x, y, z).ToXNAVector3();
+
+                        if (x > 0)
+                        {
+                            var tempBlock = section.Blocks[x - 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (x < Section.Width - 1)
+                        {
+                            var tempBlock = section.Blocks[x + 1, y, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (y > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y - 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (y < Section.Height - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y + 1, z];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+
+                        if (z > 0)
+                        {
+                            var tempBlock = section.Blocks[x, y, z - 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                        if (z < Section.Depth - 1)
+                        {
+                            var tempBlock = section.Blocks[x, y, z + 1];
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
+                        }
+                    }
+        }
+
 
         private void BuildInside(Section section)
         {
@@ -82,79 +460,74 @@ namespace MineLib.PCL.Graphics.Map
                         if (x > 0)
                         {
                             var tempBlock = section.Blocks[x - 1, y, z];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                goto cont1;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceLeft(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
-
-                    cont1:
                         if (x < Section.Width - 1)
                         {
                             var tempBlock = section.Blocks[x + 1, y, z];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                goto cont2;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceRight(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
 
-                    cont2:
                         if (y > 0)
                         {
                             var tempBlock = section.Blocks[x, y - 1, z];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                goto cont3;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBottom(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
-                    cont3:
                         if (y < Section.Height - 1)
                         {
                             var tempBlock = section.Blocks[x, y + 1, z];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                goto cont4;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceTop(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
 
-                    cont4:
                         if (z > 0)
                         {
                             var tempBlock = section.Blocks[x, y, z - 1];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                goto cont5;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceBack(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
-                    cont5:
                         if (z < Section.Depth - 1)
                         {
                             var tempBlock = section.Blocks[x, y, z + 1];
-                            if (tempBlock.SkyLight == 0 && tempBlock.Light == 0 && !BlockVBO.BuildWithLight)
-                                continue;
-
-                            if (block.IsTransparent)
-                                TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
-                            else if (tempBlock.IsAir || tempBlock.IsTransparent)
-                                OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            if (tempBlock.SkyLight != 0 || tempBlock.Light != 0 || BlockVBO.BuildWithLight)
+                            {
+                                if (block.IsTransparent)
+                                    TransparentVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                                else if (tempBlock.IsAir || tempBlock.IsTransparent)
+                                    OpaqueVertices.AddRange(BlockVBO.CubeFaceFront(new BlockRenderInfo(pos, new Block(block.ID, block.Meta, tempBlock.Light, tempBlock.SkyLight))));
+                            }
                         }
                     }
         }
+
 
         private void BuildFrontBorders(Section front, Section back)
         {
@@ -322,8 +695,8 @@ namespace MineLib.PCL.Graphics.Map
 
         public void ClearVerticies()
         {
-            OpaqueVertices = new List<VertexPositionTextureLight>();
-            TransparentVertices = new List<VertexPositionTextureLight>();
+            OpaqueVertices = new ThreadSafeList<VertexPositionTextureLight>();
+            TransparentVertices = new ThreadSafeList<VertexPositionTextureLight>();
         }
     }
 }
