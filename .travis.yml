@@ -1,0 +1,16 @@
+language: csharp
+mono:
+  - latest
+
+solution: MineLib.PCL.sln
+
+install:
+  - nuget restore MineLib.PCL.sln
+
+script:
+  - xbuild /p:Configuration=Release MineLib.PCL.sln
+  - xbuild /p:Configuration=Debug MineLib.PCL.sln
+
+notifications:
+  email:
+    on_success: always
