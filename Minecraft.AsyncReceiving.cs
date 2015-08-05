@@ -1,23 +1,54 @@
 ﻿using System;
 using System.Collections.Generic;
-using MineLib.Network;
-using MineLib.Network.Data.Anvil;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using MineLib.Core;
+using MineLib.Core.Data.Anvil;
+using MineLib.Core.Interfaces;
+using MineLib.PCL.Graphics.Components;
+using MineLib.PCL.Graphics.Extensions;
 
 namespace MineLib.PCL
 {
-    public partial class Minecraft
+    public partial class Minecraft<T> where T : struct, IVertexType
     {
-        private Dictionary<Type, Action<IAsyncReceive>> AsyncReceiveHandlers { get; set; }
+        private Dictionary<Type, List<Func<IReceive, Task>>> ReceiveHandlers { get; set; }
 
-        public void RegisterReceiveEvent(Type asyncReceiveType, Action<IAsyncReceive> method)
+        public void RegisterReceiveEvent(Type receiveType, Func<IReceive, Task> func)
         {
-            //var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
-            //if (!any)
-            //    throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
+            var any = receiveType.GetTypeInfo().ImplementedInterfaces.Any(p => p == typeof(IReceive));
+            if (!any)
+                throw new InvalidOperationException("Type type must implement MineLib.Core.IReceiveAsync");
 
-            AsyncReceiveHandlers[asyncReceiveType] = method;
+            if (ReceiveHandlers.ContainsKey(receiveType))
+                ReceiveHandlers[receiveType].Add(func);
+            else
+                ReceiveHandlers.Add(receiveType, new List<Func<IReceive, Task>> { func });
         }
 
+        public void DeregisterReceiveEvent(Type receiveType, Func<IReceive, Task> func)
+        {
+            var any = receiveType.GetTypeInfo().ImplementedInterfaces.Any(p => p == typeof(IReceive));
+            if (!any)
+                throw new InvalidOperationException("Type type must implement MineLib.Core.IReceiveAsync");
+
+            if (ReceiveHandlers.ContainsKey(receiveType))
+                ReceiveHandlers[receiveType].Remove(func);
+        }
+
+        public void DoReceiveEvent(Type receiveType, IReceive args)
+        {
+            var any = receiveType.GetTypeInfo().ImplementedInterfaces.Any(p => p == typeof(IReceive));
+            if (!any)
+                throw new InvalidOperationException("AsyncSending type must implement MineLib.Core.IReceiveAsync");
+
+            if (ReceiveHandlers.ContainsKey(receiveType))
+                foreach (var func in ReceiveHandlers[receiveType])
+                    func(args);
+        }
 
         private void RegisterSupportedReceiveEvents()
         {
@@ -44,20 +75,9 @@ namespace MineLib.PCL
 
         }
 
-        public void DoReceiveEvent(Type asyncReceiveType, IAsyncReceive data)
-        {
-            //var any = asyncReceiveType.GetInterfaces().Any(p => p == typeof(IAsyncReceive));
-            //if (!any)
-            //    throw new InvalidOperationException("AsyncReceive type must implement MineLib.Network.IAsyncReceive");
-
-            if (!AsyncReceiveHandlers.ContainsKey(asyncReceiveType))
-                return;
-
-            AsyncReceiveHandlers[asyncReceiveType](data);
-        }
 
 
-        private void OnChatMessage(IAsyncReceive receiveEvent)
+        private async Task OnChatMessage(IReceive receiveEvent)
         {
             var data = (OnChatMessage) receiveEvent;
 
@@ -67,7 +87,7 @@ namespace MineLib.PCL
 
         #region Anvil
 
-        private void OnChunk(IAsyncReceive receiveEvent)
+        private async Task OnChunk(IReceive receiveEvent)
         {
             var data = (OnChunk) receiveEvent;
 
@@ -81,7 +101,7 @@ namespace MineLib.PCL
             World.SetChunk(data.Chunk);
         }
 
-        private void OnChunkList(IAsyncReceive receiveEvent)
+        private async Task OnChunkList(IReceive receiveEvent)
         {
             var data = (OnChunkList) receiveEvent;
 
@@ -89,7 +109,7 @@ namespace MineLib.PCL
                 World.SetChunk(chunk);
         }
 
-        private void OnBlockChange(IAsyncReceive receiveEvent)
+        private async Task OnBlockChange(IReceive receiveEvent)
         {
             var data = (OnBlockChange) receiveEvent;
 
@@ -101,7 +121,7 @@ namespace MineLib.PCL
             World.SetBlock(data.Location, block);
         }
 
-        private void OnMultiBlockChange(IAsyncReceive receiveEvent)
+        private async Task OnMultiBlockChange(IReceive receiveEvent)
         {
             var data = (OnMultiBlockChange) receiveEvent;
 
@@ -114,12 +134,12 @@ namespace MineLib.PCL
             }      
         }
 
-        private void OnBlockAction(IAsyncReceive receiveEvent)
+        private async Task OnBlockAction(IReceive receiveEvent)
         {
             var data = (OnBlockAction) receiveEvent;
         }
 
-        private void OnBlockBreakAction(IAsyncReceive receiveEvent)
+        private async Task OnBlockBreakAction(IReceive receiveEvent)
         {
             var data = (OnBlockBreakAction) receiveEvent;
         }
@@ -127,48 +147,59 @@ namespace MineLib.PCL
         #endregion
 
 
-        private void OnPlayerPosition(IAsyncReceive receiveEvent)
+        private async Task OnPlayerPosition(IReceive receiveEvent)
         {
             var data = (OnPlayerPosition) receiveEvent;
+
+#if DEBUG
+            DebugComponent<T>.PlayerPos = data.Position.ToXNAVector3();
+#endif
+
+            Player.Position.Vector3 = data.Position;
         }
 
-        private void OnPlayerLook(IAsyncReceive receiveEvent)
+        private async Task OnPlayerLook(IReceive receiveEvent)
         {
             var data = (OnPlayerLook) receiveEvent;
         }
 
-        private void OnHeldItemChange(IAsyncReceive receiveEvent)
+        private async Task OnHeldItemChange(IReceive receiveEvent)
         {
             var data = (OnHeldItemChange) receiveEvent;
         }
 
-        private void OnSpawnPoint(IAsyncReceive receiveEvent)
+        private async Task OnSpawnPoint(IReceive receiveEvent)
         {
             var data = (OnSpawnPoint) receiveEvent;
-	        Player.Position.Vector3 = data.Location;
+
+#if DEBUG
+            DebugComponent<T>.PlayerPos = data.Location.ToXNAVector3();
+#endif
+
+            Player.Position.Vector3 = data.Location;
         }
 
-        private void OnUpdateHealth(IAsyncReceive receiveEvent)
+        private async Task OnUpdateHealth(IReceive receiveEvent)
         {
             var data = (OnUpdateHealth) receiveEvent;  
         }
 
-        private void OnRespawn(IAsyncReceive receiveEvent)
+        private async Task OnRespawn(IReceive receiveEvent)
         {
             var data = (OnRespawn) receiveEvent;
         }
 
-        private void OnAction(IAsyncReceive receiveEvent)
+        private async Task OnAction(IReceive receiveEvent)
         {
             var data = (OnAction) receiveEvent;
         }
 
-        private void OnSetExperience(IAsyncReceive receiveEvent)
+        private async Task OnSetExperience(IReceive receiveEvent)
         {
             var data = (OnSetExperience) receiveEvent;
         }
 
-        private void OnTimeUpdate(IAsyncReceive receiveEvent)
+        private async Task OnTimeUpdate(IReceive receiveEvent)
         {
             var data = (OnTimeUpdate)receiveEvent;
             World.AgeOfTheWorld = data.WorldAge;

@@ -1,17 +1,16 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
+
+using ICSharpCode.SharpZipLib.Zip;
+
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
-using MineLib.Network;
-using MineLib.Network.IO;
-using MineLib.Network.Module;
+using MineLib.Core.Loader;
+using MineLib.Core.Wrappers;
 
 using MineLib.PCL.Graphics.Components;
-using MineLib.PCL.Graphics.Map;
+using MineLib.PCL.Graphics.Screens.InMenu;
 
 using PCLStorage;
 
@@ -19,117 +18,98 @@ namespace MineLib.PCL.Graphics
 {
     public sealed class Client : Game
     {
-        public static ContentManager ContentManager { get; private set; }
+        public int PreferredBackBufferWidth { get { return Graphics.PreferredBackBufferWidth; } set { Graphics.PreferredBackBufferWidth = value; Graphics.ApplyChanges(); } }
+        public int PreferredBackBufferHeight { get { return Graphics.PreferredBackBufferHeight; } set { Graphics.PreferredBackBufferHeight = value; Graphics.ApplyChanges(); } }
 
-        public Rectangle Windows { get { return _graphics.GraphicsDevice.Viewport.Bounds; } }
+        public static Texture2D Blocks { get; private set; }
 
-        private Camera _camera;
-        private GraphicsDeviceManager _graphics;
-        private Minecraft _minecraft;
-        private SpriteBatch _spriteBatch;
-        private INetworkTCP _tcp;
-        private WorldVBO _world;
-        public static Texture2D Blocks;
-        public static int Chunks;
-        private int count = 0;
-        private FPSCounterComponent FPS;
+        public ScreenManagerComponent ScreenManager { get; private set; }
+
+        public MinecraftTextureStorageComponent MinecraftTextureStorage { get; private set; }
 
 
+        private GraphicsDeviceManager Graphics { get; set; }
 
-        public event Storage GetStorage;
 
-        public event LoadAssembly LoadAssembly;
+        public ProtocolAssembly DefaultModule { get; private set; }
+        private const string DefaultModuleSettings = "DefaultModule.json";
 
-        public Client(INetworkTCP tcp, bool fullscreen = false)
+        public Client(Action<Game> platformCode, bool fullscreen = false)
         {
-            _graphics = new GraphicsDeviceManager(this);
-            _graphics.IsFullScreen = fullscreen;
-            ContentManager = Content;
-            ContentManager.RootDirectory = "Content";
-            _tcp = tcp;
-        }
+            Graphics = new GraphicsDeviceManager(this);
+            //Graphics.SynchronizeWithVerticalRetrace = false;
+            Graphics.IsFullScreen = fullscreen;
+            Graphics.ApplyChanges();
 
-        protected override void Initialize()
-        {
-            base.Initialize();
+            //IsFixedTimeStep = false;
+            //TargetElapsedTime = new TimeSpan((long)(1000f / 60f * TimeSpan.TicksPerMillisecond));
+
+            Content.RootDirectory = "Content";
+
+            if(platformCode != null)
+                platformCode(this);
         }
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
-            Blocks = ContentManager.Load<Texture2D>("Texture");
-            FPS = new FPSCounterComponent(this, _spriteBatch, ContentManager.Load<SpriteFont>("VolterGoldfish"));
-            Components.Add(FPS);
+            Blocks = Content.Load<Texture2D>("Texture");
+            //Blocks = Content.Load<Texture2D>("Effects\\terrain");
 
-            string ip;
-            ushort port;
-            if (GetStorage != null &&GetStorage(this).CheckExistsAsync("settings.txt").Result == ExistenceCheckResult.FileExists)
-            {
-                using (var reader = new StreamReader(GetStorage(this).GetFileAsync("settings.txt").Result.OpenAsync(FileAccess.Read).Result))
+            var contentFolder = FileSystemWrapper.ContentFolder;
+            if (contentFolder != null && contentFolder.CheckExistsAsync("texturepack.zip").Result == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(contentFolder.GetFileAsync("texturepack.zip").Result.OpenAsync(FileAccess.Read).Result))
                 {
-                    ip = reader.ReadLine();
-                    port = ushort.Parse(reader.ReadLine());
+                    var minecraftFiles = new ZipFile(reader.BaseStream);
+                    MinecraftTextureStorage = new MinecraftTextureStorageComponent(this, minecraftFiles);
+                    MinecraftTextureStorage.ParseGUITextures();
                 }
-            }
-            _minecraft = new Minecraft();
-            _minecraft.LoadAssembly += LoadAssembly;
-            _minecraft.GetStorage += GetStorage;
-            _minecraft.Initialize("TestBot", "", ProtocolType.Module, _tcp, false, null);
-            _minecraft.BeginConnect("192.168.1.53", 25565, OnConnected, null);
 
-            _camera = new Camera(this, Vector3.Zero, Vector3.Zero, 25f);
-            Components.Add(_camera);
+            else if (contentFolder != null && contentFolder.CheckExistsAsync("minecraft.jar").Result == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(contentFolder.GetFileAsync("minecraft.jar").Result.OpenAsync(FileAccess.Read).Result))
+                {
+                    var minecraftFiles = new ZipFile(reader.BaseStream);
+                    MinecraftTextureStorage = new MinecraftTextureStorageComponent(this, minecraftFiles);
+                    MinecraftTextureStorage.ParseGUITextures();
+                }
+
+
+            var list = FileSystemWrapper.ProtocolsFolder.GetFilesAsync().Result;
+            DefaultModule = FileSystemWrapper.LoadSettings<ProtocolAssembly>(DefaultModuleSettings, list.Count > 0 ? new ProtocolAssembly(list[0].Path) : null);
+
+            // Android has some strange behaviour with custom shaders. The best way I found to specify really fast shader stuff
+            AddComponent<VertexPositionTexture>();
         }
 
-        private void OnConnected(IAsyncResult ar)
+        private void AddComponent<T>() where T : struct, IVertexType
         {
-            _minecraft.BeginConnectToServer(OnJoinedServer, null);
-        }
+            ScreenManager = new ScreenManagerComponent(this);
+            Components.Add(ScreenManager);
+            ScreenManager.AddScreen(new MainMenuScreen<T>(this));
 
-        private void OnJoinedServer(IAsyncResult ar)
-        {
-            while (_minecraft.ConnectionState != ConnectionState.Joined) { Task.Delay(200); }
-            _minecraft.BeginSendClientInfo(null, null);
-            _world = new WorldVBO(_graphics.GraphicsDevice);
-            while (_minecraft.World.Chunks.Count < 100) { Task.Delay(200); }
-            count = _minecraft.World.Chunks.Count;
-            _world.World = _minecraft.World;
-            _world.Build();
-            lastbuild = DateTime.UtcNow;
+#if DEBUG
+            Components.Add(new DebugComponent<T>(this));
+#endif
         }
-
-        protected override void UnloadContent()
-        {
-        }
-
-        private DateTime lastbuild = DateTime.UtcNow;
-        //private KeyboardState oldState;
 
         protected override void Update(GameTime gameTime)
-        {
-            //_camera.Update(gameTime);
+        {          
+            InputManager.Update(gameTime);
 
-            if (_minecraft != null && _minecraft.World != null)
+            if (InputManager.IsOncePressed(Keys.L))
             {
-                Chunks = _minecraft.World.Chunks.Count;
-                if (Chunks > count && DateTime.UtcNow - lastbuild > new TimeSpan(0, 0, 20))
-                {
-                    _world.World = _minecraft.World;
-                    _world.Build();
-                    count = _minecraft.World.Chunks.Count;
-                }
+                Graphics.SynchronizeWithVerticalRetrace = !Graphics.SynchronizeWithVerticalRetrace;
+                Graphics.ApplyChanges();
+                IsFixedTimeStep = !IsFixedTimeStep;
             }
-            //var state = Keyboard.GetState();
-            //if (((!state.IsKeyDown(Keys.J) || oldState.IsKeyDown(Keys.J)) &&
-            //     (!state.IsKeyDown(Keys.J) || !oldState.IsKeyDown(Keys.J))) &&
-            //    ((!state.IsKeyDown(Keys.J) && oldState.IsKeyDown(Keys.J)) && (_minecraft != null)))
-            //{
-            //    _world.World = _minecraft.World;
-            //    _world.Build();
-            //}
-            //oldState = state;
-            if (_world != null)
-                _world.Update();
+
+            if (InputManager.IsOncePressed(Keys.N))
+                TargetElapsedTime = new TimeSpan((long)(1000f / 144f * TimeSpan.TicksPerMillisecond));
+            
+            if (InputManager.IsOncePressed(Keys.N))
+                TargetElapsedTime = new TimeSpan((long)(1000f / 60f * TimeSpan.TicksPerMillisecond));
+            
+            if (InputManager.IsOncePressed(Keys.B))
+                TargetElapsedTime = new TimeSpan((long)(1000f / 30f * TimeSpan.TicksPerMillisecond));
             
             base.Update(gameTime);
         }
@@ -137,9 +117,6 @@ namespace MineLib.PCL.Graphics
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            if (_world != null)
-                _world.Draw(_camera);
 
             base.Draw(gameTime);
         }

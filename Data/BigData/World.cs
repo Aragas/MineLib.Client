@@ -1,34 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using MineLib.Network;
-using MineLib.Network.Data;
-using MineLib.Network.Data.Anvil;
+
+using MineLib.Core;
+using MineLib.Core.Data;
+using MineLib.Core.Data.Anvil;
+using MineLib.Core.Interfaces;
 
 namespace MineLib.PCL.Data.BigData
 {
-    // Just ignore it. I think something is wrong here :DD
-    internal static class TimeSpanUtil
+    public class World : IDisposable
     {
-        public static double ConvertSecondsToDays(double seconds)
-        {
-            return TimeSpan.FromSeconds(seconds).TotalDays;
-        }
-
-        public static double ConvertSecondsToHours(double seconds)
-        {
-            return TimeSpan.FromSeconds(seconds).TotalHours;
-        }
-
-        public static double ConvertSecondsToMinutes(double seconds)
-        {
-            return TimeSpan.FromSeconds(seconds).TotalMinutes;
-        }
-
-    }
-
-    public class World
-    {
-        public List<Chunk> Chunks;
+        public List<Chunk> Chunks { get; private set; }
 
         // -- Debugging
         public static List<string> UnsupportedBlockList = new List<string>();
@@ -57,16 +39,9 @@ namespace MineLib.PCL.Data.BigData
             //return 12; // this disables the day & night cycle.
         }
 
-        public TimeSpan AgeOfTheWorldTimeSpan
-        {
-            get
-            {
-                return new TimeSpan(
-                    (int) TimeSpanUtil.ConvertSecondsToDays(AgeOfTheWorld/20),
-                    (int) TimeSpanUtil.ConvertSecondsToHours(AgeOfTheWorld/20),
-                    (int) TimeSpanUtil.ConvertSecondsToMinutes(AgeOfTheWorld/20));
-            }
-        }
+        public TimeSpan AgeOfTheWorldTimeSpan { get { return TimeSpan.MaxValue; } }
+
+        public TimeSpan RealTime { get { return new TimeSpan((int)((TimeOfDay / 1000 + 8) % 24), (int)(60 * (TimeOfDay % 1000) / 1000), 0); } }
 
         public World()
         {
@@ -94,7 +69,7 @@ namespace MineLib.PCL.Data.BigData
             var chunkX = coordinates.X >> 4;
             var chunkZ = coordinates.Z >> 4;
 
-            return GetChunk(new Coordinates2D(chunkX, chunkZ));
+             return GetChunk(new Coordinates2D(chunkX, chunkZ));
         }
 
         public static Coordinates2D ChunkCoordinatesToWorld(Coordinates2D coordinates)
@@ -135,7 +110,8 @@ namespace MineLib.PCL.Data.BigData
         {
             var chunk = GetChunkByBlockCoordinates(coordinates);
 
-            return chunk.GetBlock(coordinates);
+            var t = chunk.GetBlock(coordinates);
+            return t;
         }
 
         public void SetBlock(Position coordinates, Block block)
@@ -195,6 +171,12 @@ namespace MineLib.PCL.Data.BigData
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            if(Chunks != null)
+                Chunks.Clear();
+        }
     }
 
     public struct GameStateChanged

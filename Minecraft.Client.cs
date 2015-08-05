@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
-using MineLib.Network.Data;
+using Microsoft.Xna.Framework.Graphics;
+using MineLib.Core.Data;
 using Newtonsoft.Json;
 
 // -- Use http://json2csharp.com/
 namespace MineLib.PCL
 {
-    public partial class Minecraft
+    public partial class Minecraft<T> where T : struct, IVertexType
     {
         // -- Debugging
         public readonly List<ChatMessage> ChatTextHistory = new List<ChatMessage>();

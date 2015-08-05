@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using MineLib.Network.Data;
-using MineLib.Network.Data.Structs;
+
+using MineLib.Core.Data;
+using MineLib.Core.Data.Structs;
 
 namespace MineLib.PCL.Data.BigData
 {

@@ -1,59 +1,62 @@
-﻿using System;
-using MineLib.Network;
-using MineLib.Network.Data.Structs;
+﻿using Microsoft.Xna.Framework.Graphics;
+
+using MineLib.Core;
+using MineLib.Core.Data;
+using MineLib.Core.Data.Structs;
+using MineLib.Core.Interfaces;
 
 namespace MineLib.PCL
 {
-    public partial class Minecraft
+    public partial class Minecraft<T> where T : struct, IVertexType
     {
-        public IAsyncResult BeginConnectToServer(AsyncCallback asyncCallback, object state)
+        public void ConnectToServer(string serverHost, ushort port, string username, VarInt protocol)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginConnectToServer), new BeginConnectToServerArgs(asyncCallback, state));
+            _networkHandler.DoSending(typeof(ConnectToServer), new ConnectToServerArgs(serverHost, port, username, protocol));
         }
 
-        public IAsyncResult BeginKeepAlive(int value, AsyncCallback asyncCallback, object state)
+        public void KeepAlive(int value)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginKeepAlive), new BeginKeepAliveArgs(value, asyncCallback, state));
+            _networkHandler.DoSending(typeof(KeepAlive), new KeepAliveArgs(value));
         }
 
-        public IAsyncResult BeginSendClientInfo(AsyncCallback asyncCallback, object state)
+        public void SendClientInfo()
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginSendClientInfo), new BeginSendClientInfoArgs(asyncCallback, state));
+             _networkHandler.DoSending(typeof(SendClientInfo), new SendClientInfoArgs());
         }
 
-        public IAsyncResult BeginRespawn(AsyncCallback asyncCallback, object state)
+        public void Respawn()
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginRespawn), new BeginRespawnArgs(asyncCallback, state));
+            _networkHandler.DoSending(typeof(Respawn), new RespawnArgs());
         }
 
-        public IAsyncResult BeginPlayerMoved(IPlaverMovedData data, AsyncCallback asyncCallback, object state)
+        public void PlayerMoved(IPlaverMovedData data)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginPlayerMoved), new BeginPlayerMovedArgs(data, asyncCallback, state));
+            _networkHandler.DoSending(typeof(PlayerMoved), new PlayerMovedArgs(data));
         }
 
-        public IAsyncResult BeginPlayerMoved(PlaverMovedMode mode, IPlaverMovedData data, AsyncCallback asyncCallback, object state)
+        public void PlayerMoved(PlaverMovedMode mode, IPlaverMovedData data)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginPlayerMoved), new BeginPlayerMovedArgs(mode, data, asyncCallback, state));
+            _networkHandler.DoSending(typeof(PlayerMoved), new PlayerMovedArgs(mode, data));
         }
 
-        public IAsyncResult BeginPlayerSetRemoveBlock(PlayerSetRemoveBlockMode mode, IPlayerSetRemoveBlockData data, AsyncCallback asyncCallback, object state)
+        public void PlayerSetRemoveBlock(PlayerSetRemoveBlockMode mode, IPlayerSetRemoveBlockData data)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginPlayerSetRemoveBlock), new BeginPlayerSetRemoveBlockArgs(mode, data, asyncCallback, state));
+            _networkHandler.DoSending(typeof(PlayerSetRemoveBlock), new PlayerSetRemoveBlockArgs(mode, data));
         }
 
-        public IAsyncResult BeginPlayerSetRemoveBlock(IPlayerSetRemoveBlockData data, AsyncCallback asyncCallback, object state)
+        public void PlayerSetRemoveBlock(IPlayerSetRemoveBlockData data)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginPlayerSetRemoveBlock), new BeginPlayerSetRemoveBlockArgs(data, asyncCallback, state));
+            _networkHandler.DoSending(typeof(PlayerSetRemoveBlock), new PlayerSetRemoveBlockArgs(data));
         }
 
-        public IAsyncResult BeginSendMessage(string message, AsyncCallback asyncCallback, object state)
+        public void SendMessage(string message)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginSendMessage), new BeginSendMessageArgs(message, asyncCallback, state));
+            _networkHandler.DoSending(typeof(SendMessage), new SendMessageArgs(message));
         }
 
-        public IAsyncResult BeginPlayerHeldItem(short slot, AsyncCallback asyncCallback, object state)
+        public void PlayerHeldItem(short slot)
         {
-            return _networkHandler.DoAsyncSending(typeof(BeginPlayerHeldItem), new BeginPlayerHeldItemArgs(slot, asyncCallback, state));
+            _networkHandler.DoSending(typeof(PlayerHeldItem), new PlayerHeldItemArgs(slot));
         }
     }
 }

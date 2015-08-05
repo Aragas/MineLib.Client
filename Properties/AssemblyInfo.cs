@@ -3,28 +3,15 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-// Общие сведения о сборке определяются следующим 
-// набором атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
-// связанные с этой сборкой.
 [assembly: AssemblyTitle("MineLib.PCL")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Graphic library of MineLib project")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("https://github.com/MineLib")]
 [assembly: AssemblyProduct("MineLib.PCL")]
-[assembly: AssemblyCopyright("©  2015")]
+[assembly: AssemblyCopyright("2015 Aragas (Aragasas)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: NeutralResourcesLanguage("ru")]
+[assembly: NeutralResourcesLanguage("en-US")]
 
-// Сведения о версии сборки состоят из следующих четырех значений:
-//
-//      Основной номер версии
-//      Дополнительный номер версии 
-//   Номер сборки
-//      Редакция
-//
-// Можно задать все значения или принять номера сборки и редакции по умолчанию 
-// указав "*", как показано ниже:
-// [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
