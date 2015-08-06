@@ -229,7 +229,9 @@ namespace MineLib.PCL.Graphics.World
             if(!boundingFrustum.FastIntersect(BoundingBox))
                 return;
 
-            WorldComponent<T>.DrawingOpaqueSections++;
+#if DEBUG
+                    WorldComponent<T>.DrawingOpaqueSections++;
+#endif
 
             int opaqueVerticesCount = 0;
             foreach (var opaqueVertex in OpaqueVertices)
@@ -293,7 +295,9 @@ namespace MineLib.PCL.Graphics.World
             if (!boundingFrustum.FastIntersect(BoundingBox))
                 return;
 
-            WorldComponent<T>.DrawingTransparentSections++;
+#if DEBUG
+                    WorldComponent<T>.DrawingTransparentSections++;
+#endif
 
             int opaqueVerticesCount = 0;
             foreach (var opaqueVertex in OpaqueVertices)
