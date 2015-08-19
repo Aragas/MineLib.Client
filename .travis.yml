@@ -2,17 +2,17 @@ language: csharp
 mono:
   - latest
 
-solution: MineLib.PCL.sln
+solution: MineLib.PGL.sln
 
 before_install:
   - git submodule update --init --recursive
   
 install:
-  - nuget restore MineLib.PCL.sln
+  - nuget restore MineLib.PGL.sln
 
 script:
-  - xbuild /p:Configuration=Release MineLib.PCL.sln
-  - xbuild /p:Configuration=Debug MineLib.PCL.sln
+  - xbuild /p:Configuration=Release MineLib.PGL.sln
+  - xbuild /p:Configuration=Debug MineLib.PGL.sln
 
 notifications:
   email:
