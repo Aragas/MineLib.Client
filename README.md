@@ -2,8 +2,8 @@
 ------------ | -------------
 [![Build Status](https://travis-ci.org/MineLib/MineLib.PCL.svg?branch=master)](https://travis-ci.org/MineLib/MineLib.PCL) | [![Build status](https://ci.appveyor.com/api/projects/status/bmagsg0sjd071x44?svg=true)](https://ci.appveyor.com/project/Aragas/minelib-pcl)
 
-# MineLib.Client
-Minecraft graphic client for MineLib.Network.Modular
+# MineLib.PGL
+Portable Graphic Library for MineLib.Core
 
 
 MonoGame required!
