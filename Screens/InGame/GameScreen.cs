@@ -44,15 +44,18 @@ namespace MineLib.PGL.Screens.InGame
         {
             base.Draw(gameTime);
 
-            SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
             foreach (var playerClient in _clients)
-            {
-                playerClient.Draw(gameTime);
+                playerClient.DrawRaw(gameTime);
 
-                SpriteBatch.Draw(playerClient.ColorRT, playerClient.PlayerRectangle, Color.White);
-                SpriteBatch.Draw(playerClient.DepthRT, playerClient.PlayerRectangle, Color.White);
-            }
-            SpriteBatch.End();
+            //SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
+            //foreach (var playerClient in _clients)
+            //{
+            //    playerClient.Draw(gameTime);
+            //
+            //    SpriteBatch.Draw(playerClient.ColorRT, playerClient.PlayerRectangle, Color.White);
+            //    SpriteBatch.Draw(playerClient.DepthRT, playerClient.PlayerRectangle, Color.White);
+            //}
+            //SpriteBatch.End();
         }
 
         public override void Dispose()

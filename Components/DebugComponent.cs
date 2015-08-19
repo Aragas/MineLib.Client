@@ -16,8 +16,6 @@ namespace MineLib.PGL.Components
         public static Vector3 PlayerPos;
         public static Vector3 CameraPos;
 
-        public static Vector2 DebugMouse;
-
         public static int Vertices;
 
 
@@ -65,7 +63,6 @@ namespace MineLib.PGL.Components
             var tra = string.Format("Transparent Sections : {0}",   WorldRendererComponent<T>.DrawingTransparentSections);
             var cam =                                               CameraPos.ToString();
             var ver = string.Format("Verticies : {0}",              Vertices);
-            var mou = string.Format("Mouse : {0}",                  DebugMouse);
 
             _fontRenderer.DrawText(_spriteBatch, pos, new Rectangle(6,  1,      width, Height), Color.Black);
             _fontRenderer.DrawText(_spriteBatch, pos, new Rectangle(5,  0,      width, Height), Color.White);
@@ -96,9 +93,6 @@ namespace MineLib.PGL.Components
 
             _fontRenderer.DrawText(_spriteBatch, ver, new Rectangle(6, 211, width, Height), Color.Black);
             _fontRenderer.DrawText(_spriteBatch, ver, new Rectangle(5, 210, width, Height), Color.White);
-
-            _fontRenderer.DrawText(_spriteBatch, mou, new Rectangle(6, 241, width, Height), Color.Black);
-            _fontRenderer.DrawText(_spriteBatch, mou, new Rectangle(5, 240, width, Height), Color.White);
 
             _spriteBatch.End();
         }

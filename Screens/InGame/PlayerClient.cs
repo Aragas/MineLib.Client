@@ -197,6 +197,16 @@ namespace MineLib.PGL.Screens.InGame
             GraphicsDevice.DepthStencilState = preDepthStencilState;
         }
 
+        public void DrawRaw(GameTime gameTime)
+        {
+            var preDepthStencilState = GraphicsDevice.DepthStencilState;
+
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            WorldRenderer.Draw(gameTime);
+
+            GraphicsDevice.DepthStencilState = preDepthStencilState;
+        }
+
         public override void Dispose()
         {
             if (_cancellationToken != null)
