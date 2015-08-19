@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineLib.PCL", "MineLib.PCL.csproj", "{5FB0D09E-5F52-46B6-B018-66381E4A02AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineLib.PGL", "MineLib.PGL.csproj", "{5FB0D09E-5F52-46B6-B018-66381E4A02AE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineLib.Core", "MineLib.Core\MineLib.Core.csproj", "{C6BE1779-61E7-4C62-989A-9FA62ACB2C78}"
 EndProject

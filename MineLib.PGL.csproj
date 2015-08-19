@@ -8,8 +8,8 @@
     <ProjectGuid>{5FB0D09E-5F52-46B6-B018-66381E4A02AE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MineLib.PCL</RootNamespace>
-    <AssemblyName>MineLib.PCL</AssemblyName>
+    <RootNamespace>MineLib.PGL</RootNamespace>
+    <AssemblyName>MineLib.PGL</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
