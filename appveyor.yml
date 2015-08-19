@@ -8,5 +8,5 @@ install:
 before_build:
 - nuget restore
 build:
-  project: MineLib.PCL.sln
+  project: MineLib.PGL.sln
   verbosity: minimal
