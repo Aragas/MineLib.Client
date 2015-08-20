@@ -14,7 +14,7 @@ using MineLib.PGL.Screens.InMenu.ServerList;
 
 namespace MineLib.PGL.Screens.InMenu
 {
-    public sealed class MainMenuScreen<T> : Screen where T : struct, IVertexType
+    public sealed class MainMenuScreen : Screen
     {
         Texture2D MainMenuTexture { get; set; }
         //Texture2D _xboxController;
@@ -133,27 +133,27 @@ namespace MineLib.PGL.Screens.InMenu
 
         private void OnDirectConnectButton(Server entry)
         {
-            AddScreenAndCloseThis(new GameScreen<T>(Game, entry));
+            AddScreenAndCloseThis(new GameScreen(Game, entry));
         }
 
         private void OnLastServerConnectButton(Server entry)
         {
-            AddScreenAndCloseThis(new GameScreen<T>(Game, entry));
+            AddScreenAndCloseThis(new GameScreen(Game, entry));
         }
 
         private void OnMultiplayerButtonPressed()
         {
-            AddScreenAndCloseThis(new ServerListScreen<T>(Game));
+            AddScreenAndCloseThis(new ServerListScreen(Game));
         }
 
         private void OnOptionButtonPressed()
         {
-            AddScreenAndCloseThis(new OptionsScreen<T>(Game));
+            AddScreenAndCloseThis(new OptionsScreen(Game));
         }
 
         private void OnLanguageButtonPressed()
         {
-            AddScreenAndCloseThis(new LanguageScreen<T>(Game));
+            AddScreenAndCloseThis(new LanguageScreen(Game));
         }
 
         private void OnExitButtonPressed()

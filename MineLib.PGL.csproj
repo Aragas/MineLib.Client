@@ -59,7 +59,6 @@
     <Compile Include="World\BlockRenderer.cs" />
     <Compile Include="World\BlockRenderInfo.cs" />
     <Compile Include="VertexPositionTextureLight.cs" />
-    <Compile Include="VertexPositionNormalHalfTexture.cs" />
     <Compile Include="Extensions\BoundingFrustumExtension.cs" />
     <Compile Include="Extensions\Vector3Extension.cs" />
     <Compile Include="Screens\InGame\GameScreen.cs" />

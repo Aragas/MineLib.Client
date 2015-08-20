@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -12,12 +12,11 @@ using MineLib.PGL.Extensions;
 
 namespace MineLib.PGL.World
 {
-	public class ChunkVBO<T> : IDisposable where T : struct, IVertexType
+	public class ChunkVBO : IDisposable
 	{
         GraphicsDevice GraphicsDevice { get; set; }
         //IndexBuffer IndexBuffer { get; set; }
 	    VertexBuffer Buffer { get; set; }
-        T ShaderType { get; set; }
         int[] OpaqueVertices { get; set; }
         int[] TransparentVertices { get; set; }
 
@@ -25,14 +24,11 @@ namespace MineLib.PGL.World
 
         public int TotalVerticesCount { get { return Buffer != null ? Buffer.VertexCount : 0; } }
 
-	    public List<SectionVBO<T>> Sections { get; private set; }
+	    public List<SectionVBO> Sections { get; private set; }
         public Coordinates2D Coordinates2D { get; private set; }
         public byte[,] Biomes { get; private set; }
 
-        public static Coordinates2D GetBiomeCoordinates(int index)
-	    {
-            return new Coordinates2D(index % 16, (index / 16) % 16);
-	    }
+        public static Coordinates2D GetBiomeCoordinates(int index) { return new Coordinates2D(index % 16, (index / 16) % 16); }
 
 
 		public ChunkVBO(GraphicsDevice device, Chunk chunk)
@@ -48,10 +44,10 @@ namespace MineLib.PGL.World
                 Biomes[coords.X, coords.Z] = chunk.Biomes[i];
             }
 
-            Sections = new List<SectionVBO<T>>();
+            Sections = new List<SectionVBO>();
 		    for (int i = 0; i < chunk.Sections.Length; i++)
 		        if (chunk.Sections[i].IsFilled)
-                    Sections.Add(new SectionVBO<T>(chunk.Sections[i]));
+                    Sections.Add(new SectionVBO(chunk.Sections[i]));
 
             if (Sections.Count > 0)
                 BoundingBox = new BoundingBox(Sections[0].BoundingBox.Min, Sections[Sections.Count - 1].BoundingBox.Max);
@@ -59,7 +55,7 @@ namespace MineLib.PGL.World
             BindBuffer(Sections);
 		}
 
-		public ChunkVBO(GraphicsDevice device, List<SectionVBO<T>> sections)
+		public ChunkVBO(GraphicsDevice device, List<SectionVBO> sections)
 		{
 			GraphicsDevice = device;
             Sections = sections;
@@ -83,7 +79,7 @@ namespace MineLib.PGL.World
                 Biomes[coords.X, coords.Z] = center.Biomes[i];
             }
 
-            Sections = new List<SectionVBO<T>>();
+            Sections = new List<SectionVBO>();
             for (int i = 0; i < center.Sections.Length; i++)
             {
                 if (!center.Sections[i].IsFilled)
@@ -96,7 +92,7 @@ namespace MineLib.PGL.World
                 var top = new Section(Position.Zero); if (i > 0) top = center.Sections[i - 1];
                 var bottom = new Section(Position.Zero);    if (i < center.Sections.Length - 1) bottom = center.Sections[i + 1];
 
-                Sections.Add(new SectionVBO<T>(center.Sections[i], front.Sections[i], back.Sections[i], left.Sections[i], right.Sections[i], top, bottom));
+                Sections.Add(new SectionVBO(center.Sections[i], front.Sections[i], back.Sections[i], left.Sections[i], right.Sections[i], top, bottom));
             }
 
             if(Sections.Count > 0)
@@ -108,10 +104,10 @@ namespace MineLib.PGL.World
 
         public void UpdateSection(Section section, Section front, Section back, Section left, Section right, Section top, Section bottom)
         {
-            UpdateSection(new SectionVBO<T>(section, front, back, left, right, top, bottom));
+            UpdateSection(new SectionVBO(section, front, back, left, right, top, bottom));
         }
 
-        public void UpdateSection(SectionVBO<T> section)
+        public void UpdateSection(SectionVBO section)
         {
             for (int i = 0; i < Sections.Count; i++)
                 if (Sections[i].GlobalPos == section.GlobalPos)
@@ -122,10 +118,10 @@ namespace MineLib.PGL.World
 
         public void UpdateSection(int index, Section section, Section front, Section back, Section left, Section right, Section top, Section bottom)
 		{
-            UpdateSection(index, new SectionVBO<T>(section, front, back, left, right, top, bottom));
+            UpdateSection(index, new SectionVBO(section, front, back, left, right, top, bottom));
 		}
 
-		public void UpdateSection(int index, SectionVBO<T> section)
+		public void UpdateSection(int index, SectionVBO section)
 		{
             if(index < Sections.Count)
                 return;
@@ -136,12 +132,12 @@ namespace MineLib.PGL.World
 		}
 
 
-	    private void BindBuffer(List<SectionVBO<T>> sectionsVbo)
+	    private void BindBuffer(List<SectionVBO> sectionsVbo)
 	    {
-	        var opaque = new List<T>();
+            var opaque = new List<IVertexType>();
             OpaqueVertices = new int[sectionsVbo.Count];
 
-            var transparent = new List<T>();
+            var transparent = new List<IVertexType>();
             TransparentVertices = new int[sectionsVbo.Count];
 
             for (int i = 0; i < sectionsVbo.Count; i++)
@@ -163,8 +159,30 @@ namespace MineLib.PGL.World
 
 	        if (opaque.Count > 0)
 	        {
-	            Buffer = new VertexBuffer(GraphicsDevice, ShaderType.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
-	            Buffer.SetData(opaque.ToArray());
+	            switch (WorldRendererComponent.ShaderType)
+	            {
+	                case ShaderType.VertexPositionTexture:
+	                {
+	                    Buffer = new VertexBuffer(GraphicsDevice, VertexPositionTexture.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+	                    var list = new List<VertexPositionTexture>();
+	                    foreach (var vertexType in opaque)
+	                        list.Add((VertexPositionTexture) vertexType);
+	                    Buffer.SetData(list.ToArray());
+	                }
+	                break;
+
+	                case ShaderType.VertexPositionTextureLight:
+	                {
+	                    Buffer = new VertexBuffer(GraphicsDevice, VertexPositionTextureLight.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+	                    var list = new List<VertexPositionTextureLight>();
+	                    foreach (var vertexType in opaque)
+	                        list.Add((VertexPositionTextureLight) vertexType);
+	                    Buffer.SetData(list.ToArray());
+	                }
+	                break;
+	            }
 	            opaque.Clear();
 	        }
 	        //
@@ -214,7 +232,7 @@ namespace MineLib.PGL.World
                 if (OpaqueVertices[i] > 0 && boundingFrustum.FastIntersect(Sections[i].BoundingBox))
                 {
 #if DEBUG
-                    WorldRendererComponent<T>.DrawingOpaqueSections++;
+                    WorldRendererComponent.DrawingOpaqueSections++;
 #endif
                     GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, OpaqueVertices[i] / 3);
                     //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, section.OpaqueVerticesCount, offset, section.OpaqueVerticesCount / 3);
@@ -230,7 +248,7 @@ namespace MineLib.PGL.World
                 return;
 
 #if DEBUG
-                    WorldRendererComponent<T>.DrawingOpaqueSections++;
+                    WorldRendererComponent.DrawingOpaqueSections++;
 #endif
 
             int opaqueVerticesCount = 0;
@@ -280,7 +298,7 @@ namespace MineLib.PGL.World
                 if (TransparentVertices[i] > 0 && boundingFrustum.FastIntersect(section.BoundingBox))
                 {
 #if DEBUG
-                    WorldRendererComponent<T>.DrawingTransparentSections++;
+                    WorldRendererComponent.DrawingTransparentSections++;
 #endif
                     GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, offset, TransparentVertices[i] / 3);
                     //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, transparentCount , offset, transparentCount / 3);
@@ -296,7 +314,7 @@ namespace MineLib.PGL.World
                 return;
 
 #if DEBUG
-                    WorldRendererComponent<T>.DrawingTransparentSections++;
+                    WorldRendererComponent.DrawingTransparentSections++;
 #endif
 
             int opaqueVerticesCount = 0;

@@ -14,7 +14,7 @@ using MineLib.PGL.Extensions;
 
 namespace MineLib.PGL.Data
 {
-    public partial class Minecraft<T> where T : struct, IVertexType
+    public partial class Minecraft
     {
         private Dictionary<Type, List<Func<IReceive, Task>>> ReceiveHandlers { get; set; }
 
@@ -153,7 +153,7 @@ namespace MineLib.PGL.Data
             var data = (OnPlayerPosition) receiveEvent;
 
 #if DEBUG
-            DebugComponent<T>.PlayerPos = data.Position.ToXNAVector3();
+            DebugComponent.PlayerPos = data.Position.ToXNAVector3();
 #endif
 
             Player.Position.Vector3 = data.Position;
@@ -174,7 +174,7 @@ namespace MineLib.PGL.Data
             var data = (OnSpawnPoint) receiveEvent;
 
 #if DEBUG
-            DebugComponent<T>.PlayerPos = data.Location.ToXNAVector3();
+            DebugComponent.PlayerPos = data.Location.ToXNAVector3();
 #endif
 
             Player.Position.Vector3 = data.Location;

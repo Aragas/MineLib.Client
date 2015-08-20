@@ -26,7 +26,7 @@ namespace MineLib.PGL.Screens.InGame
         PlayerFourQuad
     }
 
-    public sealed class PlayerClient<T> : ScreenGUIComponent where T : struct, IVertexType
+    public sealed class PlayerClient : ScreenGUIComponent
     {
         public RenderTarget2D ColorRT { get; private set; }
         public RenderTarget2D DepthRT { get; private set; }
@@ -35,16 +35,16 @@ namespace MineLib.PGL.Screens.InGame
         private bool HandleInput { get; set; }
         private PlayerIndex PlayerIndex { get; set; }
 
-        private CameraComponent<T> Camera { get; set; }
-        private WorldRendererComponent<T> WorldRenderer { get; set; }
-        private Minecraft<T> Minecraft { get; set; }
+        private CameraComponent Camera { get; set; }
+        private WorldRendererComponent WorldRenderer { get; set; }
+        private Minecraft Minecraft { get; set; }
 
         private SpriteBatch SpriteBatch { get; set; }
         private readonly CancellationTokenSource _cancellationToken;
 
         private const string DefaulConnectSettings = "DefaultConnect.json";
 
-        public PlayerClient(Client game, Screen screen, PlayerIndex player, Server entry, Minecraft<T> minecraft = null) : base(game, screen)
+        public PlayerClient(Client game, Screen screen, PlayerIndex player, Server entry, Minecraft minecraft = null) : base(game, screen)
         {
             HandleInput = true;
 
@@ -62,7 +62,7 @@ namespace MineLib.PGL.Screens.InGame
             FsQ = new FullscreenQuad(GraphicsDevice);
 
 
-            Minecraft = new Minecraft<T>(Game).Initialize(PlayerIndex.ToString(), "", ProtocolType.Module, false, null) as Minecraft<T>;
+            Minecraft = new Minecraft(Game).Initialize(PlayerIndex.ToString(), "", ProtocolType.Module, false, null) as Minecraft;
             Minecraft.ChoseModule += modules =>
             {
                 foreach (var protocol in modules)
@@ -72,15 +72,15 @@ namespace MineLib.PGL.Screens.InGame
                 return null;
             };
 
-            var server = FileSystemWrapper.LoadSettings<Server>(DefaulConnectSettings, new Server { Address = new Address { IP = "192.168.1.53", Port = 25565 } });
+            var server = FileSystemWrapper.LoadSettings<Server>(DefaulConnectSettings, new Server { Address = new Address { IP = "95.24.192.107", Port = 25565 } });
             ThreadWrapper.StartThread(async () =>
             {
                 await Minecraft.ConnectAsync(server.Address.IP, server.Address.Port);
                 Minecraft.ConnectToServer(server.Address.IP, server.Address.Port, Minecraft.ClientUsername, 47);
             }, false, "MinecraftStartThread");
 
-            Camera = new CameraComponent<T>(Game, Microsoft.Xna.Framework.Vector3.Zero, Microsoft.Xna.Framework.Vector3.Zero, 25f);
-            WorldRenderer = new WorldRendererComponent<T>(Game, Camera, Minecraft);
+            Camera = new CameraComponent(Game, Microsoft.Xna.Framework.Vector3.Zero, Microsoft.Xna.Framework.Vector3.Zero, 25f);
+            WorldRenderer = new WorldRendererComponent(Game, Camera, Minecraft);
 
             Camera.World = Minecraft.World;
         }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using MineLib.PGL.Components;
+
 namespace MineLib.PGL.World
 {
     public enum BlockFace
@@ -142,38 +144,33 @@ namespace MineLib.PGL.World
             #endregion
         }
 
-	    public static T[] CreateQuadSide<T>(BlockRenderInfo block) where T : IVertexType
+	    public static IVertexType[] CreateQuadSide(BlockRenderInfo block)
         {
-            var shaderType = default(T);
+            var quad = new IVertexType[4];
 
             var unit = CubeMesh[(int)block.Face];
             var texture = CubeTexture[6];
+            
+	        switch (WorldRendererComponent.ShaderType)
+	        {
+	            case ShaderType.VertexPositionTexture:
+	                for (var i = 0; i < 4; i++)
+	                    quad[i] = new VertexPositionTexture(block.Position + unit[i], texture[i] + block.Texture);
+	                break;
 
-            if (shaderType is VertexPositionTextureLight)
-            {
-                var quad = new VertexPositionTextureLight[4];
-                for (var i = 0; i < 4; i++)
-                    quad[i] = new VertexPositionTextureLight(block.Position + unit[i], texture[i] + block.Texture, block.Block.SkyLight * SkyLight, new Vector3(10));
+	            case ShaderType.VertexPositionTextureLight:
+	                for (var i = 0; i < 4; i++)
+	                    quad[i] = new VertexPositionTextureLight(block.Position + unit[i], texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
+	                break;
+	        }
 
-                return quad as T[];
-            }
-
-            if (shaderType is VertexPositionTexture)
-                {
-                    var quad = new VertexPositionTexture[4];
-                    for (var i = 0; i < 4; i++)
-                        quad[i] = new VertexPositionTexture(block.Position + unit[i], texture[i] + block.Texture);
-
-                    return quad as T[];
-                }
-
-            return null;
+	        return quad;
         }
 
-        public static T[] CreateQuadSideTriagled<T>(BlockRenderInfo block) where T : IVertexType
+        public static IVertexType[] CreateQuadSideTriagled(BlockRenderInfo block)
         {
-            var returnVertices = new T[6];
-            var vertices = CreateQuadSide<T>(block);
+            var returnVertices = new IVertexType[6];
+            var vertices = CreateQuadSide(block);
 
             returnVertices[0] = vertices[0];
             returnVertices[1] = vertices[1];

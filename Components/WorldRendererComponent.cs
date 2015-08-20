@@ -17,7 +17,14 @@ using MineLib.PGL.World;
 
 namespace MineLib.PGL.Components
 {
-    public sealed class WorldRendererComponent<T> : MineLibComponent where T : struct, IVertexType
+    public enum ShaderType
+    {
+        VertexPositionTexture,
+        VertexPositionTextureLight,
+    }
+
+
+    public sealed class WorldRendererComponent : MineLibComponent
     {
 #if DEBUG
         public static int Chunks;
@@ -26,61 +33,56 @@ namespace MineLib.PGL.Components
         public static int DrawingTransparentSections;
 #endif
 
-        // Good try, warning
-#pragma warning disable 649
-        T _shaderType;
-#pragma warning restore 649
+        public static ShaderType ShaderType = ShaderType.VertexPositionTextureLight;
 
-        readonly Minecraft<T> _minecraft;
-        readonly CameraComponent<T> _camera;
+        readonly Minecraft _minecraft;
+        readonly CameraComponent _camera;
 
         readonly Effect _solidBlockEffect;
         readonly Effect _transparentBlockEffect;
 
 
-        readonly List<ChunkVBO<T>> _chunks = new List<ChunkVBO<T>>();
+        readonly List<ChunkVBO> _chunks = new List<ChunkVBO>();
         
         Task _builder;
         readonly CancellationTokenSource _cancellationToken;
 
 
-	    public WorldRendererComponent(Client game, CameraComponent<T> camera, Minecraft<T> minecraft) : base(game)
+	    public WorldRendererComponent(Client game, CameraComponent camera, Minecraft minecraft) : base(game)
 	    {
             _minecraft = minecraft;
 
-            // Good try, warning
-#pragma warning disable 184
-            if (_shaderType is VertexPositionTextureLight)
-#pragma warning restore 184
+	        switch (ShaderType)
 	        {
-	            _solidBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
-	            _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-	            _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
-	            _solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-	            //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-	            //_solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
+	            case ShaderType.VertexPositionTexture:
 
-	            _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
-	            _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-	            _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
-	            _transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-	            //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-	            //_transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
+	                _solidBlockEffect = new BasicEffect(GraphicsDevice);
+	                ((BasicEffect) _solidBlockEffect).Texture = Client.Blocks;
+	                ((BasicEffect) _solidBlockEffect).TextureEnabled = true;
+
+	                _transparentBlockEffect = new BasicEffect(GraphicsDevice);
+	                ((BasicEffect) _transparentBlockEffect).Texture = Client.Blocks;
+	                ((BasicEffect) _transparentBlockEffect).TextureEnabled = true;
+	                break;
+
+
+	            case ShaderType.VertexPositionTextureLight:
+
+	                _solidBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+	                _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+	                _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+	                _solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+	                //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
+	                //_solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
+
+	                _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+	                _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+	                _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+	                _transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+	                //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
+	                //_transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
+	                break;
 	        }
-
-            // Good try, warning
-#pragma warning disable 184
-	        if (_shaderType is VertexPositionTexture)
-#pragma warning restore 184
-	        {
-                _solidBlockEffect = new BasicEffect(GraphicsDevice);
-                ((BasicEffect)_solidBlockEffect).Texture = Client.Blocks;
-	            ((BasicEffect) _solidBlockEffect).TextureEnabled = true;
-
-                _transparentBlockEffect = new BasicEffect(GraphicsDevice);
-                ((BasicEffect)_transparentBlockEffect).Texture = Client.Blocks;
-                ((BasicEffect)_transparentBlockEffect).TextureEnabled = true;
-            }
 
                 //foreach (var component in Game.Components)
                 //    if (component is CameraComponentTC)
@@ -125,7 +127,7 @@ namespace MineLib.PGL.Components
                 if (_cancellationToken.IsCancellationRequested)
                     return;
                 else
-                    _chunks.Add(new ChunkVBO<T>(GraphicsDevice, chunks[i], front, back, left, right));
+                    _chunks.Add(new ChunkVBO(GraphicsDevice, chunks[i], front, back, left, right));
             }
 		}
 
@@ -142,7 +144,7 @@ namespace MineLib.PGL.Components
 	    {
             for (int i = 0; i < _chunks.Count; i++)
                 if (_chunks[i].Coordinates2D == center.Coordinates)
-                    _chunks[i] = new ChunkVBO<T>(GraphicsDevice, center, front, back, left, right);
+                    _chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 	    }
 
 	    public void UpdateSection(int sectionIndex, Chunk center, Chunk front, Chunk back, Chunk left, Chunk right)
@@ -151,7 +153,7 @@ namespace MineLib.PGL.Components
 
             for (int i = 0; i < _chunks.Count; i++)
                 if (_chunks[i].Coordinates2D == center.Coordinates)
-                    _chunks[i] = new ChunkVBO<T>(GraphicsDevice, center, front, back, left, right);
+                    _chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 	    }
 
 	    public override void Update(GameTime gameTime)
@@ -186,9 +188,9 @@ namespace MineLib.PGL.Components
         {
 #if DEBUG
 #if  BF || BFC
-            DebugComponent<T>.BoundingFrustumEnabled    = true;
+            DebugComponent.BoundingFrustumEnabled    = true;
 #else
-            DebugComponent<T>.BoundingFrustumEnabled    = false;
+            DebugComponent.BoundingFrustumEnabled    = false;
 #endif
             DrawingOpaqueSections = 0;
             DrawingTransparentSections                  = 0;
@@ -246,7 +248,7 @@ namespace MineLib.PGL.Components
             }
 
 #if DEBUG
-            DebugComponent<T>.Vertices                  = vertices;
+            DebugComponent.Vertices                  = vertices;
 #endif
         }
 

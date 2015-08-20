@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace MineLib.PGL.Components
 {
-    public sealed class CameraComponent<T> : GameComponent where T : struct, IVertexType
+    public sealed class CameraComponent : GameComponent
     {
         float fovAngle;
 
@@ -19,21 +19,14 @@ namespace MineLib.PGL.Components
         readonly float _cameraSpeed;
 
         Vector2 _cameraRotationBuffer;
+        Vector2 _cameraPositionBuffer;
 
         bool _recalculate;
 
         
-        public Vector3 Position
-        {
-            get { return _cameraPosition; }
-            set { _cameraPosition = value; _recalculate = true; }
-        }
+        public Vector3 Position { get { return _cameraPosition; } set { _cameraPosition = value; _recalculate = true; } }
 
-        public Vector3 Rotation
-        {
-            get { return _cameraRotation; }
-            set { _cameraRotation = value; _recalculate = true; }
-        }
+        public Vector3 Rotation { get { return _cameraRotation; } set { _cameraRotation = value; _recalculate = true; } }
 
         public Matrix Projection { get; private set; }
         public Matrix View { get; private set; }
@@ -87,11 +80,11 @@ namespace MineLib.PGL.Components
 
 #if DEBUG
             if (InputManager.IsOncePressed(Keys.U))
-                MoveTo(DebugComponent<T>.PlayerPos, Vector3.Zero);
+                MoveTo(DebugComponent.PlayerPos, Vector3.Zero);
 #endif
 
 
-#region Moving
+            #region Moving
             var moveVector = Vector3.Zero;
 
             if (InputManager.MoveForward)
@@ -152,6 +145,7 @@ namespace MineLib.PGL.Components
                 _cameraRotationBuffer.Y = _cameraRotationBuffer.Y - (_cameraRotationBuffer.Y - MathHelper.ToRadians(75.0f));
 
             Rotation = new Vector3(-MathHelper.Clamp(_cameraRotationBuffer.Y, MathHelper.ToRadians(-75.0f), MathHelper.ToRadians(75.0f)), MathHelper.WrapAngle(_cameraRotationBuffer.X), 0);
+            //Position = new Vector3(-MathHelper.Clamp(_cameraPositionBuffer.Y, MathHelper.ToRadians(-75.0f), MathHelper.ToRadians(75.0f)), MathHelper.WrapAngle(_cameraPositionBuffer.X), 0);
             #endregion Camera
 
 
@@ -169,7 +163,7 @@ namespace MineLib.PGL.Components
             effect.Parameters["World"].SetValue(Matrix.Identity);
 
 #if DEBUG
-            DebugComponent<T>.CameraPos = Position;
+            DebugComponent.CameraPos = Position;
 #endif
         }
 

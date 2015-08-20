@@ -10,15 +10,15 @@ using MineLib.PGL.Screens.InMenu;
 
 namespace MineLib.PGL.Screens.InGame
 {
-    public sealed class GameScreen<T> : Screen where T: struct, IVertexType
+    public sealed class GameScreen : Screen
     {
-        private readonly List<PlayerClient<T>> _clients = new List<PlayerClient<T>>();
+        private readonly List<PlayerClient> _clients = new List<PlayerClient>();
 
         public GameScreen(Client game, Server entry) : base(game, "GameScreen")
         {
             Game.IsMouseVisible = false;
 
-            _clients.Add(new PlayerClient<T>(Game, this, PlayerIndex.PlayerOne, entry));
+            _clients.Add(new PlayerClient(Game, this, PlayerIndex.PlayerOne, entry));
 
             //_clients.Add(new PlayerClient<T>(Game, this, PlayerIndex.PlayerOneHalf, entry));
             //_clients.Add(new PlayerClient<T>(Game, this, PlayerIndex.PlayerTwoHalf, entry));
@@ -34,7 +34,7 @@ namespace MineLib.PGL.Screens.InGame
             base.Update(gameTime);
 
             if(InputManager.IsOncePressed(Keys.F1))
-                AddScreenAndCloseThis(new MainMenuScreen<T>(Game));
+                AddScreenAndCloseThis(new MainMenuScreen(Game));
 
             foreach (var playerClient in _clients)
                 playerClient.Update(gameTime);

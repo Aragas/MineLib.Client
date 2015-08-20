@@ -78,17 +78,17 @@ namespace MineLib.PGL
             DefaultModule = FileSystemWrapper.LoadSettings<ProtocolAssembly>(DefaultModuleSettings, list.Count > 0 ? new ProtocolAssembly(list[0].Path) : null);
 
             // Android has some strange behaviour with custom shaders. The best way I found to specify really fast shader stuff
-            AddComponent<VertexPositionTexture>();
+            AddComponent();
         }
 
-        private void AddComponent<T>() where T : struct, IVertexType
+        private void AddComponent()
         {
             ScreenManager = new ScreenManagerComponent(this);
             Components.Add(ScreenManager);
-            ScreenManager.AddScreen(new MainMenuScreen<T>(this));
+            ScreenManager.AddScreen(new MainMenuScreen(this));
 
 #if DEBUG
-            Components.Add(new DebugComponent<T>(this));
+            Components.Add(new DebugComponent(this));
 #endif
         }
 

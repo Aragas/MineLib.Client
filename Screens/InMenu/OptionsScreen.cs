@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace MineLib.PGL.Screens.InMenu
 {
-    public sealed class OptionsScreen<T> : Screen where T: struct , IVertexType
+    public sealed class OptionsScreen : Screen
     {
         Texture2D MainBackgroundTexture { get; set; }
         
@@ -23,7 +23,7 @@ namespace MineLib.PGL.Screens.InMenu
             base.Update(gameTime);
 
             if (InputManager.IsOncePressed(Keys.Back) || InputManager.IsOncePressed(Buttons.B))
-                AddScreenAndCloseThis(new MainMenuScreen<T>(Game));
+                AddScreenAndCloseThis(new MainMenuScreen(Game));
         }
 
         public override void Draw(GameTime gameTime)

@@ -18,7 +18,7 @@ using PCLStorage;
 
 namespace MineLib.PGL.Screens.InMenu.ServerList
 {
-    public sealed class ServerListScreen<T> : Screen where T : struct, IVertexType
+    public sealed class ServerListScreen : Screen
     {
         Texture2D MainBackgroundTexture { get; set; }
 
@@ -112,7 +112,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
         Rectangle BackgroundUp { get; set; }
         Rectangle BackgroundDown { get; set; }
 
-        ServerEntryDrawer<T> ServerEntryDrawer { get; set; }
+        ServerEntryDrawer ServerEntryDrawer { get; set; }
 
         int SelectedServerIndex { get; set; }
 
@@ -143,7 +143,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
             //Servers.Add(new Server { Name = "Shit", Address = new Address() { IP = "127.0.0.1", Port = 25565} });
             SaveServerList();
 
-            ServerEntryDrawer = new ServerEntryDrawer<T>(Game, this, Servers);//, new List<GUIButton> { connectButton, editServerButton });
+            ServerEntryDrawer = new ServerEntryDrawer(Game, this, Servers);//, new List<GUIButton> { connectButton, editServerButton });
             ServerEntryDrawer.OnClickedPressed += OnClickedServerEntry;
         }
        
@@ -151,7 +151,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
         {
             if (InputManager.IsOncePressed(Keys.Back) ||
                 (InputManager.IsOncePressed(Buttons.B) && InputManager.CurrentGamePadState.IsButtonUp(Buttons.LeftTrigger) && InputManager.CurrentGamePadState.ThumbSticks.Left == Vector2.Zero))
-                AddScreenAndCloseThis(new MainMenuScreen<T>(Game));
+                AddScreenAndCloseThis(new MainMenuScreen(Game));
 
             ServerEntryDrawer.Update(gameTime);
 
@@ -196,7 +196,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
 
         void OnConnectButtonPressed()
         {
-            AddScreenAndCloseThis(new GameScreen<T>(Game, Servers[SelectedServerIndex]));
+            AddScreenAndCloseThis(new GameScreen(Game, Servers[SelectedServerIndex]));
 
             //bool status = gameScreen.Connect();
             //AddScreenAndCloseThis(status ? (Screen)gameScreen : new ServerListScreen(GameClient));
@@ -220,7 +220,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
         }
         void OnReturnButtonPressed()
         {
-            AddScreenAndCloseThis(new MainMenuScreen<T>(Game));
+            AddScreenAndCloseThis(new MainMenuScreen(Game));
         }
 
         void OnClickedServerEntry(int index)

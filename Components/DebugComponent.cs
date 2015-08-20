@@ -9,7 +9,7 @@ using MineLib.PGL.BMFont;
 
 namespace MineLib.PGL.Components
 {
-    public sealed class DebugComponent<T> : DrawableGameComponent where T : struct, IVertexType
+    public sealed class DebugComponent : DrawableGameComponent
     {
         public static bool BoundingFrustumEnabled = false;
 
@@ -57,10 +57,10 @@ namespace MineLib.PGL.Components
             var fps = string.Format("FPS  : {0}",                   _frameRate * 4);
             var ram = string.Format("RAM : {0} (KB)",               GC.GetTotalMemory(false) / 1024);
 
-            var gpu = string.Format("Chunks : {0}",                 WorldRendererComponent<T>.Chunks);
-            var cpu = string.Format("Build Chunks : {0}",           WorldRendererComponent<T>.BuildedChunks);
-            var opa = string.Format("Opaque Sections : {0}",        WorldRendererComponent<T>.DrawingOpaqueSections);
-            var tra = string.Format("Transparent Sections : {0}",   WorldRendererComponent<T>.DrawingTransparentSections);
+            var gpu = string.Format("Chunks : {0}",                 WorldRendererComponent.Chunks);
+            var cpu = string.Format("Build Chunks : {0}",           WorldRendererComponent.BuildedChunks);
+            var opa = string.Format("Opaque Sections : {0}",        WorldRendererComponent.DrawingOpaqueSections);
+            var tra = string.Format("Transparent Sections : {0}",   WorldRendererComponent.DrawingTransparentSections);
             var cam =                                               CameraPos.ToString();
             var ver = string.Format("Verticies : {0}",              Vertices);
 

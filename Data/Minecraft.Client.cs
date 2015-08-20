@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 // -- Use http://json2csharp.com/
 namespace MineLib.PGL.Data
 {
-    public partial class Minecraft<T> where T : struct, IVertexType
+    public partial class Minecraft
     {
         // -- Debugging
         public readonly List<ChatMessage> ChatTextHistory = new List<ChatMessage>();

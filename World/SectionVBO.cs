@@ -12,7 +12,7 @@ using MineLib.PGL.Extensions;
 
 namespace MineLib.PGL.World
 {
-    public class SectionVBO<T> : IDisposable where T : struct, IVertexType
+    public class SectionVBO : IDisposable
     {
         public Vector3 GlobalPos { get; private set; }
 
@@ -21,14 +21,14 @@ namespace MineLib.PGL.World
         public BoundingBox BoundingBox { get; private set; }
 
 
-        public T[] OpaqueVerticesArray { get { return OpaqueVertices.ToArray(); } }
+        public IVertexType[] OpaqueVerticesArray { get { return OpaqueVertices.ToArray(); } }
         public int OpaqueVerticesCount { get { return OpaqueVertices.Count; } }
 
-        private List<T> OpaqueVertices { get; set; }
+        private List<IVertexType> OpaqueVertices { get; set; }
 
-        public T[] TransparentVerticesArray { get { return TransparentVertices.ToArray(); } }
+        public IVertexType[] TransparentVerticesArray { get { return TransparentVertices.ToArray(); } }
         public int TransparentVerticesCount { get { return TransparentVertices.Count; } }
-        private List<T> TransparentVertices { get; set; }
+        private List<IVertexType> TransparentVertices { get; set; }
 
         public int TotalVerticesCount { get { return OpaqueVerticesCount + TransparentVerticesCount; } }
 
@@ -43,8 +43,8 @@ namespace MineLib.PGL.World
 
             BoundingBox = new BoundingBox(topFrontRight, bottomBackLeft);
 
-            OpaqueVertices = new List<T>();
-            TransparentVertices = new List<T>();
+            OpaqueVertices = new List<IVertexType>();
+            TransparentVertices = new List<IVertexType>();
             //Indicies = new ThreadSafeList<int>();
 
 
@@ -66,12 +66,6 @@ namespace MineLib.PGL.World
             BuildInside(section);
         }
 
-
-        public SectionVBO(List<VertexPositionTextureLight> opaqueVerticies, List<VertexPositionTextureLight> transparentVerticies)
-        {
-            OpaqueVertices = opaqueVerticies as List<T>;
-            TransparentVertices = transparentVerticies as List<T>;
-        }
 
         public SectionVBO(Section center, Section front, Section back, Section left, Section right, Section top, Section bottom) : this(center)
         {
@@ -346,9 +340,9 @@ namespace MineLib.PGL.World
         private void AddCubeSide(Vector3 pos, BlockFace face, Block block, bool isTranspared)
         {
             if (isTranspared)
-                TransparentVertices.AddRange(BlockVBO.CreateQuadSideTriagled<T>(new BlockRenderInfo(pos, face, block)));
+                TransparentVertices.AddRange(BlockVBO.CreateQuadSideTriagled(new BlockRenderInfo(pos, face, block)));
             else
-                OpaqueVertices.AddRange(BlockVBO.CreateQuadSideTriagled<T>(new BlockRenderInfo(pos, face, block)));
+                OpaqueVertices.AddRange(BlockVBO.CreateQuadSideTriagled(new BlockRenderInfo(pos, face, block)));
         }
         
 
@@ -581,7 +575,7 @@ namespace MineLib.PGL.World
             {
                 OpaqueVertices.Clear();
                 OpaqueVertices = null;
-                OpaqueVertices = new List<T>();
+                OpaqueVertices = new List<IVertexType>();
             }
 
 
@@ -589,7 +583,7 @@ namespace MineLib.PGL.World
             {
                 TransparentVertices.Clear();
                 TransparentVertices = null;
-                TransparentVertices = new List<T>();
+                TransparentVertices = new List<IVertexType>();
             }
 
             //OpaqueVertices = new List<VertexPositionTextureLight>();

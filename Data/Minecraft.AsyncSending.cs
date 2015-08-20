@@ -6,7 +6,7 @@ using MineLib.Core.Interfaces;
 
 namespace MineLib.PGL.Data
 {
-    public partial class Minecraft<T> where T : struct, IVertexType
+    public partial class Minecraft
     {
         public void ConnectToServer(string serverHost, ushort port, string username, VarInt protocol)
         {

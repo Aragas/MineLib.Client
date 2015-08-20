@@ -16,7 +16,7 @@ namespace MineLib.PGL.Data
     /// <summary>
     /// Wrapper for Network of MineLib.Net.
     /// </summary>
-    public partial class Minecraft<T>  : MineLibComponent, IMinecraftClient where T : struct, IVertexType
+    public partial class Minecraft  : MineLibComponent, IMinecraftClient
     {
         public event ChoseModule ChoseModule;
 

@@ -41,7 +41,7 @@ namespace MineLib.PGL.Extensions
             return true;
         }
 
-        public static bool FastIntersect<T>(this BoundingFrustum frustum, ref SectionVBO<T> section) where T : struct, IVertexType
+        public static bool FastIntersect<T>(this BoundingFrustum frustum, ref SectionVBO section) where T : struct, IVertexType
         {
             Vector3 vector2;
             Vector3 normal = frustum.Left.Normal;

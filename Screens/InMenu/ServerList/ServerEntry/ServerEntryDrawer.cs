@@ -14,7 +14,7 @@ using MineLib.PGL.Screens.GUI.Button;
 namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
 {
     public delegate void ServerEntryEventHandler(int index);
-    public sealed class ServerEntryDrawer<T> : GUIItem where T : struct, IVertexType
+    public sealed class ServerEntryDrawer : GUIItem
     {
         public event ServerEntryEventHandler OnClickedPressed;
 
@@ -44,7 +44,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
 
         #region Resources
 
-        int CurrentProtocol { get { return ServerListScreen<T>.NetworkProtocol; } }
+        int CurrentProtocol { get { return ServerListScreen.NetworkProtocol; } }
 
         List<Server> Servers { get; set; }
 
@@ -81,7 +81,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
 
         #endregion
 
-        public ServerEntryDrawer(Client game, ServerListScreen<T> screen, List<Server> server) : base(game, screen)
+        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server) : base(game, screen)
         {
             Servers = server;
 
@@ -159,7 +159,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
         /// <param name="screen">Screen</param>
         /// <param name="server">Server list</param>
         /// <param name="buttons">GUIButtons</param>
-        public ServerEntryDrawer(Client game, ServerListScreen<T> screen, List<Server> server, IEnumerable<GUIButton> buttons) : base(game, screen)
+        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server, IEnumerable<GUIButton> buttons) : base(game, screen)
         {
             Servers = server;
 
