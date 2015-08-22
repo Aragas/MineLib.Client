@@ -125,6 +125,7 @@ namespace MineLib.PGL.Components
             {
                 var center = new Vector2(Game.GraphicsDevice.Viewport.Width * 0.5f, Game.GraphicsDevice.Viewport.Height * 0.5f);
                 var mouseDelta = InputManager.MouseCamera - center;
+   
 
                 // Android set mouse to (0, 0)
                 if (center != -mouseDelta)
@@ -176,6 +177,23 @@ namespace MineLib.PGL.Components
             effect.Projection = Projection;
             effect.World = Matrix.Identity;
 
+#if DEBUG
+            DebugComponent.CameraPos = Position;
+#endif
+        }
+
+        public void ApplyTo(AlphaTestEffect effect)
+        {
+            if (_recalculate)
+                Recalculate();
+
+            effect.View = View;
+            effect.Projection = Projection;
+            effect.World = Matrix.Identity;
+
+#if DEBUG
+            DebugComponent.CameraPos = Position;
+#endif
         }
 
         private void Recalculate()

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using MineLib.PGL.Components;
@@ -153,7 +154,15 @@ namespace MineLib.PGL.World
             
 	        switch (WorldRendererComponent.ShaderType)
 	        {
-	            case ShaderType.VertexPositionTexture:
+                case ShaderType.VertexPositionColorTexture:
+	                for (var i = 0; i < 4; i++)
+	                {
+	                    var t = new Color(Color.White.ToVector3() * block.Block.SkyLight * SkyLight);
+	                    quad[i] = new VertexPositionColorTexture(block.Position + unit[i], t, texture[i] + block.Texture);
+	                }
+	                break;
+
+                case ShaderType.VertexPositionTexture:
 	                for (var i = 0; i < 4; i++)
 	                    quad[i] = new VertexPositionTexture(block.Position + unit[i], texture[i] + block.Texture);
 	                break;
@@ -162,6 +171,9 @@ namespace MineLib.PGL.World
 	                for (var i = 0; i < 4; i++)
 	                    quad[i] = new VertexPositionTextureLight(block.Position + unit[i], texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
 	                break;
+
+                default:
+                    throw new Exception("CreateQuadSide: " + WorldRendererComponent.ShaderType + "not implemented");
 	        }
 
 	        return quad;

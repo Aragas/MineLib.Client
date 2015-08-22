@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -161,7 +161,18 @@ namespace MineLib.PGL.World
 	        {
 	            switch (WorldRendererComponent.ShaderType)
 	            {
-	                case ShaderType.VertexPositionTexture:
+	                case ShaderType.VertexPositionColorTexture:
+	                {
+	                    Buffer = new VertexBuffer(GraphicsDevice, VertexPositionColorTexture.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+	                    var list = new List<VertexPositionColorTexture>();
+	                    foreach (var vertexType in opaque)
+	                        list.Add((VertexPositionColorTexture) vertexType);
+	                    Buffer.SetData(list.ToArray());
+	                }
+                    break;
+
+                    case ShaderType.VertexPositionTexture:
 	                {
 	                    Buffer = new VertexBuffer(GraphicsDevice, VertexPositionTexture.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
 
@@ -182,6 +193,9 @@ namespace MineLib.PGL.World
 	                    Buffer.SetData(list.ToArray());
 	                }
 	                break;
+
+	                default:
+	                    throw new Exception("BindBuffer: " + WorldRendererComponent.ShaderType + "not implemented");
 	            }
 	            opaque.Clear();
 	        }

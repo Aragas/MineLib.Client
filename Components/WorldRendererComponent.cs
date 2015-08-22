@@ -19,6 +19,7 @@ namespace MineLib.PGL.Components
 {
     public enum ShaderType
     {
+        VertexPositionColorTexture,
         VertexPositionTexture,
         VertexPositionTextureLight,
     }
@@ -26,14 +27,14 @@ namespace MineLib.PGL.Components
 
     public sealed class WorldRendererComponent : MineLibComponent
     {
+        public static readonly ShaderType ShaderType = ShaderType.VertexPositionTextureLight;
+
 #if DEBUG
         public static int Chunks;
 	    public static int BuildedChunks;
         public static int DrawingOpaqueSections;
         public static int DrawingTransparentSections;
 #endif
-
-        public static ShaderType ShaderType = ShaderType.VertexPositionTextureLight;
 
         readonly Minecraft _minecraft;
         readonly CameraComponent _camera;
@@ -48,66 +49,86 @@ namespace MineLib.PGL.Components
         readonly CancellationTokenSource _cancellationToken;
 
 
-	    public WorldRendererComponent(Client game, CameraComponent camera, Minecraft minecraft) : base(game)
-	    {
+        public WorldRendererComponent(Client game, CameraComponent camera, Minecraft minecraft) : base(game)
+        {
             _minecraft = minecraft;
 
-	        switch (ShaderType)
-	        {
-	            case ShaderType.VertexPositionTexture:
+            switch (ShaderType)
+            {
+                case ShaderType.VertexPositionTexture:
+                case ShaderType.VertexPositionColorTexture:
+                    #region VertexPositionTexture | VertexPositionColorTexture
 
-	                _solidBlockEffect = new BasicEffect(GraphicsDevice);
-	                ((BasicEffect) _solidBlockEffect).Texture = Client.Blocks;
-	                ((BasicEffect) _solidBlockEffect).TextureEnabled = true;
+                    _solidBlockEffect = new BasicEffect(GraphicsDevice);
+                    ((BasicEffect)_solidBlockEffect).EnableDefaultLighting();
+                    ((BasicEffect)_solidBlockEffect).DirectionalLight0.SpecularColor = Color.Black.ToVector3();
+                    ((BasicEffect)_solidBlockEffect).DirectionalLight1.SpecularColor = Color.Black.ToVector3();
+                    ((BasicEffect)_solidBlockEffect).DirectionalLight2.SpecularColor = Color.Black.ToVector3();
+                    ((BasicEffect)_solidBlockEffect).TextureEnabled = true;
+                    ((BasicEffect)_solidBlockEffect).Texture = Client.Blocks;
+                    ((BasicEffect)_solidBlockEffect).FogEnabled = true;
+                    ((BasicEffect)_solidBlockEffect).FogStart = 512f;
+                    ((BasicEffect)_solidBlockEffect).FogEnd = 1000f;
+                    ((BasicEffect)_solidBlockEffect).FogColor = Color.CornflowerBlue.ToVector3();
+                    if(ShaderType == ShaderType.VertexPositionColorTexture)
+                        ((BasicEffect)_solidBlockEffect).VertexColorEnabled = true;
 
-	                _transparentBlockEffect = new BasicEffect(GraphicsDevice);
-	                ((BasicEffect) _transparentBlockEffect).Texture = Client.Blocks;
-	                ((BasicEffect) _transparentBlockEffect).TextureEnabled = true;
-	                break;
+
+                    _transparentBlockEffect = new AlphaTestEffect(GraphicsDevice);
+                    ((AlphaTestEffect)_transparentBlockEffect).AlphaFunction = CompareFunction.Greater;
+                    ((AlphaTestEffect)_transparentBlockEffect).ReferenceAlpha = 127;
+                    ((AlphaTestEffect)_transparentBlockEffect).Texture = Client.Blocks;
+                    ((AlphaTestEffect)_transparentBlockEffect).FogEnabled = true;
+                    ((AlphaTestEffect)_transparentBlockEffect).FogStart = 512f;
+                    ((AlphaTestEffect)_transparentBlockEffect).FogEnd = 1000f;
+                    ((AlphaTestEffect)_transparentBlockEffect).FogColor = Color.CornflowerBlue.ToVector3();
+                    if (ShaderType == ShaderType.VertexPositionColorTexture)
+                        ((AlphaTestEffect)_transparentBlockEffect).VertexColorEnabled = true;
+
+                    #endregion VertexPositionTexture | VertexPositionColorTexture
+                    break;
 
 
-	            case ShaderType.VertexPositionTextureLight:
+                case ShaderType.VertexPositionTextureLight:
+                    #region VertexPositionTextureLight
 
-	                _solidBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
-	                _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-	                _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
-	                _solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-	                //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-	                //_solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+                    //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
+                    //_solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
 
-	                _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
-	                _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-	                _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
-	                _transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-	                //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-	                //_transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
-	                break;
-	        }
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+                    //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
+                    //_transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
 
-                //foreach (var component in Game.Components)
-                //    if (component is CameraComponentTC)
-                //        _camera = component as CameraComponentTC;
-                _camera = camera;
+                    #endregion VertexPositionTextureLight
+                    break;
+
+                default:
+                    throw new Exception("WorldRendererComponent: " + ShaderType + "not implemented");
+            }
+
+            _camera = camera;
 
             _cancellationToken = new CancellationTokenSource();
 
             Game.Exiting += GameOnExiting;
-	    }
+        }
 
 
         public void Build()
         {
-            //try
-            //{
-                if (_minecraft != null && _minecraft.World != null && (_builder == null || _builder.IsCompleted))
-                {
-                    var chunks = new Chunk[_minecraft.World.Chunks.Count];
-                    _minecraft.World.Chunks.CopyTo(chunks);
-                    _builder = Task.Factory.StartNew(() => BuildWorker(chunks), _cancellationToken.Token);
-                }
-            //}
-            //catch { }
-            // TODO: Catch something
+            if (_minecraft != null && _minecraft.World != null && (_builder == null || _builder.IsCompleted))
+            {
+                var chunks = new Chunk[_minecraft.World.Chunks.Count];
+                _minecraft.World.Chunks.CopyTo(chunks);
+                _builder = Task.Factory.StartNew(() => BuildWorker(chunks), _cancellationToken.Token);
+            }
         }
 
         private void BuildWorker(Chunk[] chunks)
@@ -176,7 +197,8 @@ namespace MineLib.PGL.Components
                 if (_chunks[i] != null)
                     _chunks[i].Update();
 
-	        if (_minecraft != null && _minecraft.World != null && !(_solidBlockEffect is BasicEffect) && !(_transparentBlockEffect is BasicEffect))
+
+	        if (ShaderType == ShaderType.VertexPositionTextureLight && _minecraft != null && _minecraft.World != null)
 	        {
                 var hours = (float) _minecraft.World.RealTime.Hours;
                 _solidBlockEffect.Parameters["TimeOfDay"].SetValue(hours);
@@ -188,27 +210,33 @@ namespace MineLib.PGL.Components
         {
 #if DEBUG
 #if  BF || BFC
-            DebugComponent.BoundingFrustumEnabled    = true;
+            DebugComponent.BoundingFrustumEnabled       = true;
 #else
-            DebugComponent.BoundingFrustumEnabled    = false;
+            DebugComponent.BoundingFrustumEnabled       = false;
 #endif
-            DrawingOpaqueSections = 0;
+            DrawingOpaqueSections                       = 0;
             DrawingTransparentSections                  = 0;
+            DebugComponent.Vertices                     = 0;
 #endif
-            int vertices                                = 0;
+            switch (ShaderType)
+            {
+                case ShaderType.VertexPositionTexture:
+                case ShaderType.VertexPositionColorTexture:
+                    _camera.ApplyTo((BasicEffect) _solidBlockEffect);
+                    _camera.ApplyTo((AlphaTestEffect) _transparentBlockEffect);
+                    break;
 
-            var solidBlockEffect = _solidBlockEffect as BasicEffect;
-            if(solidBlockEffect != null)
-                _camera.ApplyTo(solidBlockEffect);
-            else
-                _camera.ApplyTo(_solidBlockEffect);
 
-            var transparentBlockEffect = _transparentBlockEffect as BasicEffect;
-            if (transparentBlockEffect != null)
-                _camera.ApplyTo(transparentBlockEffect);
-            else
-                _camera.ApplyTo(_transparentBlockEffect);
+                case ShaderType.VertexPositionTextureLight:
+                    _camera.ApplyTo(_solidBlockEffect);
+                    _camera.ApplyTo(_transparentBlockEffect);
+                    break;
 
+                default:
+                    throw new Exception("Draw: " + ShaderType + "not implemented");
+            }
+
+            #region Drawing
 
             foreach (var pass in _solidBlockEffect.CurrentTechnique.Passes)
             {
@@ -217,7 +245,9 @@ namespace MineLib.PGL.Components
                 for (int i = 0; i < _chunks.Count; i++)
                     if (_chunks[i] != null)
                     {
-                        vertices += _chunks[i].TotalVerticesCount;
+#if DEBUG
+                        DebugComponent.Vertices += _chunks[i].TotalVerticesCount;
+#endif
 #if BF
                         _chunks[i].DrawOpaque(_camera.BoundingFrustum);
 #elif BFC
@@ -236,7 +266,9 @@ namespace MineLib.PGL.Components
                 for (int i = 0; i < _chunks.Count; i++)
                     if (_chunks[i] != null)
                     {
-                        vertices += _chunks[i].TotalVerticesCount;
+#if DEBUG
+                        DebugComponent.Vertices += _chunks[i].TotalVerticesCount;
+#endif
 #if BF
                         _chunks[i].DrawTransparent(_camera.BoundingFrustum);
 #elif BFC
@@ -247,12 +279,10 @@ namespace MineLib.PGL.Components
                     }
             }
 
-#if DEBUG
-            DebugComponent.Vertices                  = vertices;
-#endif
+            #endregion Drawing
         }
 
-        public void DrawR(GameTime gameTime)
+        public void DrawRelease(GameTime gameTime)
         {
             _camera.ApplyTo(_solidBlockEffect);
             _camera.ApplyTo(_transparentBlockEffect);

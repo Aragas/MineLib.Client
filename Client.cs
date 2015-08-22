@@ -77,12 +77,6 @@ namespace MineLib.PGL
             var list = FileSystemWrapper.ProtocolsFolder.GetFilesAsync().Result;
             DefaultModule = FileSystemWrapper.LoadSettings<ProtocolAssembly>(DefaultModuleSettings, list.Count > 0 ? new ProtocolAssembly(list[0].Path) : null);
 
-            // Android has some strange behaviour with custom shaders. The best way I found to specify really fast shader stuff
-            AddComponent();
-        }
-
-        private void AddComponent()
-        {
             ScreenManager = new ScreenManagerComponent(this);
             Components.Add(ScreenManager);
             ScreenManager.AddScreen(new MainMenuScreen(this));
@@ -103,7 +97,7 @@ namespace MineLib.PGL
                 IsFixedTimeStep = !IsFixedTimeStep;
             }
 
-            if (InputManager.IsOncePressed(Keys.N))
+            if (InputManager.IsOncePressed(Keys.M))
                 TargetElapsedTime = new TimeSpan((long)(1000f / 144f * TimeSpan.TicksPerMillisecond));
             
             if (InputManager.IsOncePressed(Keys.N))

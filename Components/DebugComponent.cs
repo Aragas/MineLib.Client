@@ -36,9 +36,9 @@ namespace MineLib.PGL.Components
         public override void Update(GameTime gameTime)
         {
             _elapsedTime += gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (_elapsedTime >= 250f)
+            if (_elapsedTime >= 1000f)
             {
-                _elapsedTime -= 250f;
+                _elapsedTime -= 1000f;
                 _frameRate = _frameCounter;
                 _frameCounter = 0;
             }
@@ -54,7 +54,7 @@ namespace MineLib.PGL.Components
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
 
             var pos =                                               PlayerPos.ToString();
-            var fps = string.Format("FPS  : {0}",                   _frameRate * 4);
+            var fps = string.Format("FPS  : {0}",                   _frameRate);
             var ram = string.Format("RAM : {0} (KB)",               GC.GetTotalMemory(false) / 1024);
 
             var gpu = string.Format("Chunks : {0}",                 WorldRendererComponent.Chunks);
