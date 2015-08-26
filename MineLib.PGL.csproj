@@ -63,7 +63,6 @@
     <Compile Include="VertexPositionNormalTextureLight.cs" />
     <Compile Include="VertexPositionNormalTextureTangentBinormal.cs" />
     <Compile Include="VertexPositionNormalTextureTangentBinormalLight.cs" />
-    <Compile Include="VertexPosition.cs" />
     <Compile Include="World\BlockRenderer.cs" />
     <Compile Include="World\BlockRenderInfo.cs" />
     <Compile Include="VertexPositionTextureLight.cs" />
