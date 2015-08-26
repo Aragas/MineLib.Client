@@ -8,11 +8,14 @@ using System.Threading.Tasks;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using MineLib.Core.Data;
 using MineLib.Core.Data.Anvil;
 
 using MineLib.PGL.Data;
+using MineLib.PGL.Extensions;
+using MineLib.PGL.Screens.InGame.Light;
 using MineLib.PGL.World;
 
 namespace MineLib.PGL.Components
@@ -22,12 +25,16 @@ namespace MineLib.PGL.Components
         VertexPositionColorTexture,
         VertexPositionTexture,
         VertexPositionTextureLight,
+        VertexPositionNormalTextureLight,
+        VertexPositionNormalTextureTangentBinormal,
+        VertexPositionNormalTextureTangentBinormalLight,
+        Deferred
     }
 
 
     public sealed class WorldRendererComponent : MineLibComponent
     {
-        public static readonly ShaderType ShaderType = ShaderType.VertexPositionTextureLight;
+        public static readonly ShaderType ShaderType = ShaderType.Deferred;
 
 #if DEBUG
         public static int Chunks;
@@ -35,6 +42,8 @@ namespace MineLib.PGL.Components
         public static int DrawingOpaqueSections;
         public static int DrawingTransparentSections;
 #endif
+
+        public List<BaseLight> Lights = new List<BaseLight>();
 
         readonly Minecraft _minecraft;
         readonly CameraComponent _camera;
@@ -88,25 +97,128 @@ namespace MineLib.PGL.Components
                     #endregion VertexPositionTexture | VertexPositionColorTexture
                     break;
 
-
                 case ShaderType.VertexPositionTextureLight:
                     #region VertexPositionTextureLight
 
-                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionTextureLight");
                     _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
                     _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
                     _solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-                    //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-                    //_solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
 
-                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\GBuffer1");
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionTextureLight");
                     _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
                     _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
                     _transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
-                    //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_s"));
-                    //_transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("Effects\\terrain_nh"));
 
                     #endregion VertexPositionTextureLight
+                    break;
+
+                case ShaderType.Deferred:
+                    #region Deffered
+
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\Deffered");
+                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    _solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
+                    _solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\Deffered");
+                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _transparentBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    _transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
+                    _transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+
+                    #endregion Deffered
+                    break;
+
+                case ShaderType.VertexPositionNormalTextureLight:
+                    #region VertexPositionNormalTextureLight
+
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionNormalTextureLight");
+                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    //_solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+                    _solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
+
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionNormalTextureLight");
+                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _transparentBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    //_transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+                    _transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
+
+                    #endregion VertexPositionNormalTextureLight
+                    break;
+
+                case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                    #region VertexPositionNormalTextureTangentBinormalLight
+
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionTextureLight");
+                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    //_solidBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    _solidBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _solidBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
+
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionTextureLight");
+                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    //_transparentBlockEffect.Parameters["Texture"].SetValue(Client.Blocks);
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+                    _solidBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _solidBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
+
+                    /*
+                    _solidBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionNormalTextureTangentBinormalLight");
+                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    _solidBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+
+                    //_solidBlockEffect.Parameters.TrySet("EyePosition", _camera.CameraLookAt);
+
+                    //_solidBlockEffect.Parameters.TrySet("WorldInverseTranspose", Matrix.Invert(Matrix.Transpose(Matrix.Identity)));
+                    _solidBlockEffect.Parameters.TrySet("WorldInverseTranspose", Matrix.Transpose(Matrix.Invert(Matrix.Identity)));
+
+                    _solidBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _solidBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
+
+                    _solidBlockEffect.Parameters.TrySet("AmbientColor", new Color(1, 1, 1, 1).ToVector4());
+                    _solidBlockEffect.Parameters.TrySet("AmbientIntensity", 0.1f);
+
+                    _solidBlockEffect.Parameters.TrySet("DiffuseLightDirection", new Microsoft.Xna.Framework.Vector3(1, 0, 0));
+                    _solidBlockEffect.Parameters.TrySet("DiffuseColor", new Color(1, 1, 1, 1).ToVector4());
+                    _solidBlockEffect.Parameters.TrySet("DiffuseIntensity", 1f);
+
+                    _solidBlockEffect.Parameters.TrySet("Shininess", 200f);
+                    _solidBlockEffect.Parameters.TrySet("SpecularColor", new Color(1, 1, 1, 1).ToVector4());
+                    _solidBlockEffect.Parameters.TrySet("ViewVector", new Microsoft.Xna.Framework.Vector3(1, 0, 0));
+
+
+
+                    _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\VertexPositionNormalTextureTangentBinormalLight");
+                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
+                    //_transparentBlockEffect.Parameters["WorldInverseTranspose"].SetValue(Matrix.Invert(Matrix.Transpose(Matrix.Identity)));
+                    _transparentBlockEffect.Parameters["SunColor"].SetValue(Color.White.ToVector4());
+                    _transparentBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
+
+                    _transparentBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _transparentBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
+
+                    _transparentBlockEffect.Parameters.TrySet("AmbientColor", new Color(1, 1, 1, 1).ToVector4());
+                    _transparentBlockEffect.Parameters.TrySet("AmbientIntensity", 0.1f);
+
+                    _transparentBlockEffect.Parameters.TrySet("DiffuseLightDirection", new Microsoft.Xna.Framework.Vector3(1, 0, 0));
+                    _transparentBlockEffect.Parameters.TrySet("DiffuseColor", new Color(1, 1, 1, 1).ToVector4());
+                    _transparentBlockEffect.Parameters.TrySet("DiffuseIntensity", 1f);
+
+                    _transparentBlockEffect.Parameters.TrySet("Shininess", 200f);
+                    _transparentBlockEffect.Parameters.TrySet("SpecularColor", new Color(1, 1, 1, 1).ToVector4());
+                    _transparentBlockEffect.Parameters.TrySet("ViewVector", new Microsoft.Xna.Framework.Vector3(1, 0, 0));
+                    */
+
+                    #endregion VertexPositionNormalTextureTangentBinormalLight
                     break;
 
                 default:
@@ -198,7 +310,10 @@ namespace MineLib.PGL.Components
                     _chunks[i].Update();
 
 
-	        if (ShaderType == ShaderType.VertexPositionTextureLight && _minecraft != null && _minecraft.World != null)
+            if ((ShaderType == ShaderType.VertexPositionTextureLight || 
+                ShaderType == ShaderType.VertexPositionNormalTextureLight || 
+                ShaderType == ShaderType.VertexPositionNormalTextureTangentBinormalLight) 
+                && _minecraft != null && _minecraft.World != null)
 	        {
                 var hours = (float) _minecraft.World.RealTime.Hours;
                 _solidBlockEffect.Parameters["TimeOfDay"].SetValue(hours);
@@ -228,6 +343,10 @@ namespace MineLib.PGL.Components
 
 
                 case ShaderType.VertexPositionTextureLight:
+                case ShaderType.VertexPositionNormalTextureLight:
+                case ShaderType.VertexPositionNormalTextureTangentBinormal:
+                case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                case ShaderType.Deferred:
                     _camera.ApplyTo(_solidBlockEffect);
                     _camera.ApplyTo(_transparentBlockEffect);
                     break;

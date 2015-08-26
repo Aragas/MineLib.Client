@@ -20,6 +20,7 @@ namespace MineLib.PGL.World
             Renderers[id] = renderer;
         }
 
+
         /*
         public static VertexPositionNormalColorTexture[] RenderBlock(IBlockProvider provider, BlockDescriptor descriptor, Vector3 offset, int indiciesOffset, out int[] indicies)
         {

@@ -173,7 +173,7 @@ namespace MineLib.PGL.World
                     break;
 
                     case ShaderType.VertexPositionTexture:
-	                {
+                        {
 	                    Buffer = new VertexBuffer(GraphicsDevice, VertexPositionTexture.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
 
 	                    var list = new List<VertexPositionTexture>();
@@ -194,7 +194,42 @@ namespace MineLib.PGL.World
 	                }
 	                break;
 
-	                default:
+                    case ShaderType.VertexPositionNormalTextureLight:
+                    {
+                        Buffer = new VertexBuffer(GraphicsDevice, VertexPositionNormalTextureLight.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+                        var list = new List<VertexPositionNormalTextureLight>();
+                        foreach (var vertexType in opaque)
+                            list.Add((VertexPositionNormalTextureLight) vertexType);
+                        Buffer.SetData(list.ToArray());
+                    }
+                    break;
+
+                    case ShaderType.VertexPositionNormalTextureTangentBinormal:
+                    case ShaderType.Deferred:
+                        {
+                            Buffer = new VertexBuffer(GraphicsDevice, VertexPositionNormalTextureTangentBinormal.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+                            var list = new List<VertexPositionNormalTextureTangentBinormal>();
+                            foreach (var vertexType in opaque)
+                                list.Add((VertexPositionNormalTextureTangentBinormal) vertexType);
+                            Buffer.SetData(list.ToArray());
+                        }
+                   break;
+
+
+                    case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                        {
+                            Buffer = new VertexBuffer(GraphicsDevice, VertexPositionNormalTextureTangentBinormalLight.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
+
+                            var list = new List<VertexPositionNormalTextureTangentBinormalLight>();
+                            foreach (var vertexType in opaque)
+                                list.Add((VertexPositionNormalTextureTangentBinormalLight)vertexType);
+                            Buffer.SetData(list.ToArray());
+                        }
+                        break;
+
+                    default:
 	                    throw new Exception("BindBuffer: " + WorldRendererComponent.ShaderType + "not implemented");
 	            }
 	            opaque.Clear();

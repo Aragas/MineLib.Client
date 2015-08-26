@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 using MineLib.Core.Data;
@@ -45,17 +44,13 @@ namespace MineLib.PGL.Screens.InGame
             base.Draw(gameTime);
 
             foreach (var playerClient in _clients)
-                playerClient.DrawRaw(gameTime);
+                playerClient.DrawDeferred(gameTime);
 
-            //SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
             //foreach (var playerClient in _clients)
-            //{
+            //    playerClient.DrawDebug(gameTime);
+
+            //foreach (var playerClient in _clients)
             //    playerClient.Draw(gameTime);
-            //
-            //    SpriteBatch.Draw(playerClient.ColorRT, playerClient.PlayerRectangle, Color.White);
-            //    SpriteBatch.Draw(playerClient.DepthRT, playerClient.PlayerRectangle, Color.White);
-            //}
-            //SpriteBatch.End();
         }
 
         public override void Dispose()
