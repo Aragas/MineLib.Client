@@ -10,7 +10,7 @@ namespace MineLib.PGL.Screens.GUI.Text
         protected Rectangle TextRectangle { get; private set; }
 
 
-        protected GUIText(Client game, Screen screen, string text, Rectangle textRect, Color textColor) : base(game, screen)
+        protected GUIText(Client game, Screen screen, string text, Rectangle textRect, Color textColor) : base(game, screen, false)
         {
             Text = text;
             TextColor = textColor;
@@ -19,6 +19,16 @@ namespace MineLib.PGL.Screens.GUI.Text
 
         public override void Update(GameTime gameTime) { }
 
-        public override void Draw(GameTime gameTime) { }
+        public override void Draw(GameTime gameTime)
+        {
+            base.Draw(gameTime);
+
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+        }
     }
 }

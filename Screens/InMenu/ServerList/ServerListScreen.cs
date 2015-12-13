@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 using MineLib.Core.Data;
-using MineLib.Core.Wrappers;
+using Aragas.Core.Wrappers;
 
 using MineLib.PGL.Screens.InGame;
 using MineLib.PGL.Screens.InMenu.ServerList.ServerEntry;
@@ -20,13 +20,15 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
 {
     public sealed class ServerListScreen : Screen
     {
+        Screen BackScreen { get; }
+
         Texture2D MainBackgroundTexture { get; set; }
 
         Task Parser { get; set; }
 
         bool ParserIsBusy { get { return Parser != null && !Parser.IsCompleted; } }
 
-        List<Server> Servers { get; set; }
+        List<Server> Servers { get; set; } = new List<Server>();
 
         public const string ServerListFileName = @"ServerList.json";
 
@@ -35,7 +37,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
 
         private void LoadServerList()
         {
-            Servers = FileSystemWrapper.LoadSettings<List<Server>>(ServerListFileName, new List<Server>());
+            FileSystemWrapper.LoadSettings(ServerListFileName, Servers);
         }
 
         private void SaveServerList()
@@ -116,8 +118,10 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
 
         int SelectedServerIndex { get; set; }
 
-        public ServerListScreen(Client game) : base(game, "ServerListScreen")
+        public ServerListScreen(Client game, Screen backScreen) : base(game)
         {
+            BackScreen = backScreen;
+
             MainBackgroundTexture = TextureStorage.GUITextures.OptionsBackground;
 
             GradientUp = new Rectangle(0, 0, ScreenRectangle.Width, 8);
@@ -146,18 +150,25 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
             ServerEntryDrawer = new ServerEntryDrawer(Game, this, Servers);//, new List<GUIButton> { connectButton, editServerButton });
             ServerEntryDrawer.OnClickedPressed += OnClickedServerEntry;
         }
-       
-        public override void Update(GameTime gameTime)
+
+        public override void OnResize()
         {
-            if (InputManager.IsOncePressed(Keys.Back) ||
-                (InputManager.IsOncePressed(Buttons.B) && InputManager.CurrentGamePadState.IsButtonUp(Buttons.LeftTrigger) && InputManager.CurrentGamePadState.ThumbSticks.Left == Vector2.Zero))
-                AddScreenAndCloseThis(new MainMenuScreen(Game));
-
-            ServerEntryDrawer.Update(gameTime);
-
-            base.Update(gameTime);
+            
         }
 
+        public override void Update(GameTime gameTime)
+        {
+            if (!Game.IsActive)
+                return;
+
+            if (InputManager.IsOncePressed(Keys.Escape) || (InputManager.IsOncePressed(Buttons.B) && InputManager.IsCurrentButtonPressed(Buttons.LeftTrigger) && InputManager.AnalogStickLeft == Vector2.Zero))
+            { 
+                BackScreen.ToActive();
+                CloseScreen();
+            }
+
+            ServerEntryDrawer.Update(gameTime);
+        }
         public override void Draw(GameTime gameTime)
         {
             // We can't handle ServerEntryDrawer as a GUIItem, drawing order is important. We draw it in mid-cycle ot this draw call
@@ -180,11 +191,9 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
 
         public override void Dispose()
         {
-            if(GradientUpTexture != null)
-                GradientUpTexture.Dispose();
+            GradientUpTexture?.Dispose();
 
-            if(GradientDownTexture != null)
-                GradientDownTexture.Dispose();
+            GradientDownTexture?.Dispose();
 
             //SaveServerList(Servers);
 
@@ -263,7 +272,6 @@ namespace MineLib.PGL.Screens.InMenu.ServerList
             backgroundTex.SetData(bgc);
             return backgroundTex;
         }
-
         private Texture2D CreateGradientDown()
         {
             Texture2D backgroundTex = new Texture2D(GraphicsDevice, ScreenRectangle.Width, 8);

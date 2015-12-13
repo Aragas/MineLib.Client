@@ -11,7 +11,9 @@ namespace MineLib.PGL.Screens.InGame.Light
     {
         private static Effect _effect;
         private static Model _model;
-        
+
+        private Texture2D specularMap;
+
         public float LightIntensity { get; set; }
 
         public float Radius
@@ -61,7 +63,7 @@ namespace MineLib.PGL.Screens.InGame.Light
             if (drawLight)
             {
                 // Set up effect parameters.
-                _effect.Parameters["colorMap"].SetValue(gBuffer.ColorRT);
+                _effect.Parameters["colorMap"].SetValue(gBuffer.SpecularTexture);
                 _effect.Parameters["normalMap"].SetValue(gBuffer.NormalRT);
                 _effect.Parameters["depthMap"].SetValue(gBuffer.DepthRT);
 
@@ -112,7 +114,6 @@ namespace MineLib.PGL.Screens.InGame.Light
         }
 
         public override void Update(GameTime gameTime) { }
-
         public override void Draw(GameTime gameTime) { }
 
         public override void Dispose() { }

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 
-using Microsoft.Xna.Framework.Graphics;
-
 using MineLib.Core.Data;
 
 using Newtonsoft.Json;
@@ -9,7 +7,7 @@ using Newtonsoft.Json;
 // -- Use http://json2csharp.com/
 namespace MineLib.PGL.Data
 {
-    public partial class Minecraft
+    public sealed partial class Minecraft
     {
         // -- Debugging
         public readonly List<ChatMessage> ChatTextHistory = new List<ChatMessage>();

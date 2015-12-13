@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace MineLib.PGL
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct VertexPositionNormalTextureTangentBinormalLight : IVertexType, IVertexTypeTangentBinormal
+    public struct VertexPositionNormalTextureTangentBinormalLight : IVertexType, IPositionNormalTextureTangentBinormal
     {
         public Vector3 Position { get; set; }
         public Vector3 Normal { get; set; }
@@ -23,7 +23,7 @@ namespace MineLib.PGL
             new VertexElement(44,   VertexElementFormat.Vector3,    VertexElementUsage.Binormal,            0),
             new VertexElement(56,   VertexElementFormat.Single,     VertexElementUsage.Color,               0));
 
-        VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
+        VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
 
         public VertexPositionNormalTextureTangentBinormalLight(Vector3 position, Vector3 normal, Vector2 textureCoordinate, float sunLight) : this()
         {
@@ -33,6 +33,6 @@ namespace MineLib.PGL
             SunLight = sunLight;
         }
 
-        public static int SizeInBytes { get { return 64; } }
+        public static int SizeInBytes => 64;
     }
 }

@@ -19,6 +19,8 @@ namespace MineLib.PGL.Components
 
         public static int Vertices;
 
+        public static int GUIItemsDrawCalls;
+
 
         readonly SpriteBatch _spriteBatch;
         readonly FontRenderer _fontRenderer;
@@ -34,7 +36,7 @@ namespace MineLib.PGL.Components
         public DebugComponent(Game game) : base(game)
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            _fontRenderer = new FontRenderer(GraphicsDevice, "PixelUnicode");
+            _fontRenderer = new FontRenderer(GraphicsDevice, "PixelUnicode", 16, 32, 48);
         }
 
         public override void Update(GameTime gameTime)
@@ -69,6 +71,7 @@ namespace MineLib.PGL.Components
             var tra = string.Format("Transparent Sections : {0}",   WorldRendererComponent.DrawingTransparentSections);
 
             var ver = string.Format("Verticies : {0}",              Vertices);
+            var gdc = string.Format("GUI Draw Calls : {0}",         GUIItemsDrawCalls);
 
             _fontRenderer.DrawText(_spriteBatch, pos, new Rectangle(6,          1,      width, Height), Color.Black);
             _fontRenderer.DrawText(_spriteBatch, pos, new Rectangle(5,          0,      width, Height), Color.White);
@@ -100,9 +103,11 @@ namespace MineLib.PGL.Components
             _fontRenderer.DrawText(_spriteBatch, ver, new Rectangle(6,          211,    width, Height), Color.Black);
             _fontRenderer.DrawText(_spriteBatch, ver, new Rectangle(5,          210,    width, Height), Color.White);
 
+            _fontRenderer.DrawText(_spriteBatch, gdc, new Rectangle(6,          241,    width, Height), Color.Black);
+            _fontRenderer.DrawText(_spriteBatch, gdc, new Rectangle(5,          240,    width, Height), Color.White);
+
             _spriteBatch.End();
         }
     }
 }
-
 #endif

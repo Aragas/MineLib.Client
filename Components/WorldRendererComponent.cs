@@ -43,7 +43,7 @@ namespace MineLib.PGL.Components
         public static int DrawingTransparentSections;
 #endif
 
-        public List<BaseLight> Lights = new List<BaseLight>();
+        public readonly List<BaseLight> Lights = new List<BaseLight>();
 
         readonly Minecraft _minecraft;
         readonly CameraComponent _camera;
@@ -117,16 +117,17 @@ namespace MineLib.PGL.Components
                     #region Deffered
 
                     _solidBlockEffect = Game.Content.Load<Effect>("Effects\\Deffered");
-                    _solidBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-                    _solidBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
-                    _solidBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
-                    _solidBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+                    _solidBlockEffect.Parameters.TrySet("World", Matrix.Identity);
+                    _solidBlockEffect.Parameters.TrySet("ColorMap", Game.Content.Load<Texture2D>("terrain"));
+                    _solidBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _solidBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
+
 
                     _transparentBlockEffect = Game.Content.Load<Effect>("Effects\\Deffered");
-                    _transparentBlockEffect.Parameters["World"].SetValue(Matrix.Identity);
-                    _transparentBlockEffect.Parameters["Texture"].SetValue(Game.Content.Load<Texture2D>("terrain"));
-                    _transparentBlockEffect.Parameters["NormalMap"].SetValue(Game.Content.Load<Texture2D>("terrain_nh"));
-                    _transparentBlockEffect.Parameters["SpecularMap"].SetValue(Game.Content.Load<Texture2D>("terrain_s"));
+                    _transparentBlockEffect.Parameters.TrySet("World", Matrix.Identity);
+                    _transparentBlockEffect.Parameters.TrySet("ColorMap", Game.Content.Load<Texture2D>("terrain"));
+                    _transparentBlockEffect.Parameters.TrySet("NormalMap", Game.Content.Load<Texture2D>("terrain_nh"));
+                    _transparentBlockEffect.Parameters.TrySet("SpecularMap", Game.Content.Load<Texture2D>("terrain_s"));
 
                     #endregion Deffered
                     break;
@@ -230,10 +231,16 @@ namespace MineLib.PGL.Components
             _cancellationToken = new CancellationTokenSource();
 
             Game.Exiting += GameOnExiting;
+
+#if DEBUG && (BF || BFC)
+            DebugComponent.BoundingFrustumEnabled       = true;
+#elif DEBUG
+            DebugComponent.BoundingFrustumEnabled       = false;
+#endif
         }
 
 
-        public void Build()
+        private void Build()
         {
             if (_minecraft != null && _minecraft.World != null && (_builder == null || _builder.IsCompleted))
             {
@@ -242,7 +249,6 @@ namespace MineLib.PGL.Components
                 _builder = Task.Factory.StartNew(() => BuildWorker(chunks), _cancellationToken.Token);
             }
         }
-
         private void BuildWorker(Chunk[] chunks)
 		{
             _chunks.Clear();
@@ -289,11 +295,12 @@ namespace MineLib.PGL.Components
                     _chunks[i] = new ChunkVBO(GraphicsDevice, center, front, back, left, right);
 	    }
 
+        private bool light = true;
 	    public override void Update(GameTime gameTime)
 		{
-	        if (_minecraft != null && _minecraft.World != null)
+            if (_minecraft?.World != null)
 	        {
-	            if (_minecraft.World.Chunks.Count >= 441 && _minecraft.World.Chunks.Count > _chunks.Count)
+	            if (_minecraft.World.Chunks.Count >= 110 && _minecraft.World.Chunks.Count > _chunks.Count)
 	                Build();
 
 #if DEBUG
@@ -305,30 +312,42 @@ namespace MineLib.PGL.Components
             BuildedChunks = _chunks.Count;
 #endif
 
+	        if (InputManager.IsOncePressed(Keys.Y))
+	            light = !light;
+
             for (int i = 0; i < _chunks.Count; i++)
                 if (_chunks[i] != null)
                     _chunks[i].Update();
 
 
-            if ((ShaderType == ShaderType.VertexPositionTextureLight || 
-                ShaderType == ShaderType.VertexPositionNormalTextureLight || 
-                ShaderType == ShaderType.VertexPositionNormalTextureTangentBinormalLight) 
-                && _minecraft != null && _minecraft.World != null)
-	        {
-                var hours = (float) _minecraft.World.RealTime.Hours;
-                _solidBlockEffect.Parameters["TimeOfDay"].SetValue(hours);
-                _transparentBlockEffect.Parameters["TimeOfDay"].SetValue(hours);
-	        }
-		}
 
+	        switch (ShaderType)
+	        {
+	            case ShaderType.Deferred:
+                    _solidBlockEffect.Parameters.TrySet("FarPlane", _camera.Far);
+                    _solidBlockEffect.Parameters.TrySet("IsLightned", light);
+                    
+                    _transparentBlockEffect.Parameters.TrySet("FarPlane", _camera.Far);
+                    _transparentBlockEffect.Parameters.TrySet("IsLightned", light);
+                    break;
+
+                case ShaderType.VertexPositionTextureLight:
+                case ShaderType.VertexPositionNormalTextureLight:
+                case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+	                if (_minecraft?.World != null)
+	                {
+                        var hours = (float) _minecraft.World.RealTime.Hours;
+
+                        _solidBlockEffect.Parameters.TrySet("TimeOfDay", hours);
+
+                        _transparentBlockEffect.Parameters.TrySet("TimeOfDay", hours);
+                    }
+                    break;
+            }
+		}
         public override void Draw(GameTime gameTime)
         {
 #if DEBUG
-#if  BF || BFC
-            DebugComponent.BoundingFrustumEnabled       = true;
-#else
-            DebugComponent.BoundingFrustumEnabled       = false;
-#endif
             DrawingOpaqueSections                       = 0;
             DrawingTransparentSections                  = 0;
             DebugComponent.Vertices                     = 0;
@@ -365,7 +384,8 @@ namespace MineLib.PGL.Components
                     if (_chunks[i] != null)
                     {
 #if DEBUG
-                        DebugComponent.Vertices += _chunks[i].TotalVerticesCount;
+                        foreach (var opaqueCount in _chunks[i].OpaqueVertices)
+                            DebugComponent.Vertices += opaqueCount;
 #endif
 #if BF
                         _chunks[i].DrawOpaque(_camera.BoundingFrustum);
@@ -377,7 +397,7 @@ namespace MineLib.PGL.Components
                     }
             }
 
-
+            ///*
             foreach (var pass in _transparentBlockEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -386,7 +406,8 @@ namespace MineLib.PGL.Components
                     if (_chunks[i] != null)
                     {
 #if DEBUG
-                        DebugComponent.Vertices += _chunks[i].TotalVerticesCount;
+                        foreach (var transparentCount in _chunks[i].TransparentVertices)
+                            DebugComponent.Vertices += transparentCount;                     
 #endif
 #if BF
                         _chunks[i].DrawTransparent(_camera.BoundingFrustum);
@@ -397,6 +418,7 @@ namespace MineLib.PGL.Components
 #endif
                     }
             }
+            //*/
 
             #endregion Drawing
         }
@@ -429,14 +451,12 @@ namespace MineLib.PGL.Components
 
         private void GameOnExiting(object sender, EventArgs eventArgs)
         {
-            if (_cancellationToken != null)
-                _cancellationToken.Cancel();
+            _cancellationToken?.Cancel();
         }
 
         public override void Dispose()
         {
-            if(_cancellationToken != null)
-                _cancellationToken.Cancel();
+            _cancellationToken?.Cancel();
 
             if (_chunks != null)
             {

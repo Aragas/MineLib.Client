@@ -2,6 +2,8 @@
 
 using MineLib.Core.Data;
 
+using Aragas.Core.Data;
+
 namespace MineLib.PGL.Extensions
 {
     public static class Vector3Extension
@@ -13,7 +15,7 @@ namespace MineLib.PGL.Extensions
 
         public static Position ToMineLibPosition(this Microsoft.Xna.Framework.Vector3 vector)
         {
-            return new Position((int)Math.Floor(vector.X), (int)Math.Floor(vector.Y), (int)Math.Floor(vector.Z));
+            return new Position((int) Math.Floor(vector.X), (int) Math.Floor(vector.Y), (int) Math.Floor(vector.Z));
         }
 
 

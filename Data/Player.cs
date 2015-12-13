@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using MineLib.Core.Data;
+using Aragas.Core.Data;
+
 using MineLib.Core.Data.Structs;
+using MineLib.Core.Data;
 
 namespace MineLib.PGL.Data
 {
-    public class Player
+    public class Player : IDisposable
     {
         public int EntityID;
 
@@ -22,7 +24,7 @@ namespace MineLib.PGL.Data
         public PlayerItems Items;
         public sbyte HeldItem;
 
-        public StatisticsEntryList Statistics;
+        public StatisticsEntry[] Statistics;
 
         public PlayerScoreboardObjective ScoreboardObjective;
 
@@ -35,7 +37,7 @@ namespace MineLib.PGL.Data
             Windows = new List<PlayerWindow>();
         }
 
-        public void SetWindowItems(byte windowId, ItemStackList slotData)
+        public void SetWindowItems(byte windowId, ItemStack[] slotData)
         {
             if (Items.WindowId == windowId)
                 Items.SlotData = slotData;
@@ -58,6 +60,11 @@ namespace MineLib.PGL.Data
         }
 
         public void ConfirmTransaction(byte windowsId, short actionNumber, bool accepted)
+        {
+            
+        }
+
+        public void Dispose()
         {
             
         }
@@ -120,7 +127,7 @@ namespace MineLib.PGL.Data
     public struct PlayerItems
     {
         public byte WindowId;
-        public ItemStackList SlotData;
+        public ItemStack[] SlotData;
     }
 
     public struct PlayerStatistics
@@ -151,5 +158,4 @@ namespace MineLib.PGL.Data
     {
 
     }
-
 }

@@ -5,8 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-using MineLib.Core.Data;
-
+using MineLib.PGL.Extensions;
 using MineLib.PGL.Screens.GUI.Box;
 using MineLib.PGL.Screens.GUI.Button;
 using MineLib.PGL.Screens.InGame;
@@ -16,79 +15,89 @@ namespace MineLib.PGL.Screens.InMenu
 {
     public sealed class MainMenuScreen : Screen
     {
-        Texture2D MainMenuTexture { get; set; }
+        Texture2D MainBackgroundTexture { get; }
         //Texture2D _xboxController;
 
-        //Vector2 DefaultBoxSize { get { return new Vector2(270, 240); } }
-        Vector2 DefaultBoxSize { get { return new Vector2(310, 275); } }
-
-        Vector2 BoxSize { get { return new Vector2(DefaultBoxSize.X * Math.Min(ResolutionScaleX, ResolutionScaleY), DefaultBoxSize.Y * Math.Min(ResolutionScaleX, ResolutionScaleY)); } }
-
-        Color Style { get { return new Color(70, 70, 70); } }
-
-        GUIBox LastServerBox { get; set; }
-        GUIBox ConnectBox { get; set; }
-        GUIBox MultiplayerBox { get; set; }
-
-
-        public MainMenuScreen(Client game) : base(game, "MainMenuScreen")
+        public MainMenuScreen(Client game) : base(game)
         {
             Game.IsMouseVisible = true;
 
-            MainMenuTexture = TextureStorage.GUITextures.Panorama0;
-
-
-            var connectBoxRectangle = new Rectangle(
-                ScreenRectangle.Center.X - (int)(BoxSize.X * 0.5f),
-                ScreenRectangle.Center.Y - (int)(BoxSize.Y * 0.60f),
-                (int)BoxSize.X,
-                (int)BoxSize.Y);
-            ConnectBox = new BoxDirectConnect(Game, this, connectBoxRectangle, OnDirectConnectButton, Style);
-            var scale = ConnectBox.ButtonScale;
-
-            var lastServerBoxRectangle = new Rectangle(
-                connectBoxRectangle.X - (int)(BoxSize.X) - (int)(15 * (scale + 1 * scale)),
-                ScreenRectangle.Center.Y - (int)(BoxSize.Y * 0.60f),
-                (int)BoxSize.X,
-                (int)BoxSize.Y);
-            var server = new LastServer { Image = null, Name = "Shitty Server", LastPlayed = "Never" };
-            LastServerBox = new BoxLastServer(Game, this, lastServerBoxRectangle, OnLastServerConnectButton, server, Style);
-
-            var multiplayerBoxRectangle = new Rectangle(
-                connectBoxRectangle.X + (int)(BoxSize.X) + (int)(15 * (scale + 1 * scale)),
-                ScreenRectangle.Center.Y - (int)(BoxSize.Y * 0.60f),
-                (int)BoxSize.X,
-                (int)BoxSize.Y);
-            MultiplayerBox = new BoxMultiplayer(Game, this, multiplayerBoxRectangle, OnMultiplayerButtonPressed, Style);
-
-            LastServerBox.AddToGUIItemMultiController(GUIItemMultiController);
-            ConnectBox.AddToGUIItemMultiController(GUIItemMultiController);
-            MultiplayerBox.AddToGUIItemMultiController(GUIItemMultiController);
-
-
-            var languageButtonRectangle = new Rectangle(
-                ScreenRectangle.Center.X - (int)(ButtonMenu.VanillaSize.X * scale * 0.5f),
-                connectBoxRectangle.Y + connectBoxRectangle.Height + 10,
-                (int)(ButtonMenu.VanillaSize.X * scale),
-                (int)(ButtonMenu.VanillaSize.Y * scale));
-            AddButtonMenu("Language", languageButtonRectangle, OnLanguageButtonPressed, Style);
-
-            var optionsButtonRectangle = new Rectangle(
-                ScreenRectangle.Center.X - (int)(ButtonMenu.VanillaSize.X * scale * 0.5f),
-                languageButtonRectangle.Y + languageButtonRectangle.Height + 10,
-                (int)(ButtonMenu.VanillaSize.X * scale),
-                (int)(ButtonMenu.VanillaSize.Y * scale));
-            AddButtonMenu("Options", optionsButtonRectangle, OnOptionButtonPressed, Style);
-
-            var exitButtonRectangle = new Rectangle(
-                ScreenRectangle.Center.X - (int)(ButtonMenu.VanillaSize.X * scale * 0.5f),
-                optionsButtonRectangle.Y + optionsButtonRectangle.Height + 10,
-                (int)(ButtonMenu.VanillaSize.X * scale),
-                (int)(ButtonMenu.VanillaSize.Y * scale));
-            AddButtonMenu("Exit", exitButtonRectangle, OnExitButtonPressed, Style);
-
+            MainBackgroundTexture = TextureStorage.GUITextures.Panorama0.Copy();
         }
+        private void OnDirectConnectButton(object sender, ConnectionEventArgs args) { AddScreenAndCloseThis(new GameScreen(Game, args.Entry)); }
+        private void OnLastServerConnectButton(object sender, ConnectionEventArgs args) { AddScreenAndCloseThis(new GameScreen(Game, args.Entry)); }
+        private void OnMultiplayerButtonPressed(object sender, EventArgs args) { AddScreenAndHideThis(new ServerListScreen(Game, this)); }
+        private void OnOptionButtonPressed(object sender, EventArgs args) { AddScreenAndHideThis(new OptionsScreen(Game, this));}
+        private void OnLanguageButtonPressed(object sender, EventArgs args) { AddScreenAndHideThis(new LanguageScreen(Game, this)); }
+        private void OnExitButtonPressed(object sender, EventArgs args) { Task.Delay(200).Wait(); Exit(); }
 
+        public override void OnResize()
+        {
+            base.OnResize();
+
+            int boxCount = 3;
+            int buttonCount = 3;
+            int boxInterval = (ScreenRectangle.Width - BoxSize.Width * boxCount) / (boxCount + 1);
+            int buttonInterval = (ScreenRectangle.Center.Y - BoxSize.Center.Y - ButtonSize.Height * boxCount) / (buttonCount + 1);
+
+            int xOffset = 0;
+            int yOffset = 0;
+
+            #region Boxes
+            // Left
+            var lastServerBoxRectangle = new Rectangle(
+                xOffset += ScreenRectangle.X + boxInterval,
+                yOffset = ScreenRectangle.Center.Y - BoxSize.Center.Y,
+                BoxSize.Width, BoxSize.Height);
+            var server = new LastServer { Image = null, Name = "Shitty Server", LastPlayed = "Never" };
+            var LastServerBox = new BoxLastServer(Game, this, lastServerBoxRectangle, OnLastServerConnectButton, server, SecondaryBackgroundColor);
+
+            // Center
+            var connectBoxRectangle = new Rectangle(
+                xOffset += BoxSize.Width + boxInterval,
+                yOffset = ScreenRectangle.Center.Y - BoxSize.Center.Y,
+                BoxSize.Width, BoxSize.Height);
+            var ConnectBox = new BoxDirectConnect(Game, this, connectBoxRectangle, OnDirectConnectButton, SecondaryBackgroundColor);
+
+            // Right
+            var multiplayerBoxRectangle = new Rectangle(
+                xOffset += BoxSize.Width + boxInterval,
+                yOffset = ScreenRectangle.Center.Y - BoxSize.Center.Y,
+                BoxSize.Width, BoxSize.Height);
+            var MultiplayerBox = new BoxMultiplayer(Game, this, multiplayerBoxRectangle, OnMultiplayerButtonPressed, SecondaryBackgroundColor);
+
+            AddGUIItems(LastServerBox.GetGUIItems());
+            AddGUIItems(ConnectBox.GetGUIItems());
+            AddGUIItems(MultiplayerBox.GetGUIItems());
+            #endregion Boxes
+
+            #region Buttons
+            // First
+            var languageButtonRectangle = new Rectangle(
+                xOffset = ScreenRectangle.Center.X - ButtonSize.Center.X,
+                yOffset += BoxSize.Height + buttonInterval,
+                ButtonSize.Width, ButtonSize.Height);
+            var LanguageButton = new ButtonMenu(Game, this, "Language", languageButtonRectangle, OnLanguageButtonPressed, SecondaryBackgroundColor);
+
+            // Second
+            var optionsButtonRectangle = new Rectangle(
+                xOffset = ScreenRectangle.Center.X - ButtonSize.Center.X,
+                yOffset += ButtonSize.Height + buttonInterval,
+                ButtonSize.Width, ButtonSize.Height);
+            var OptionsButton = new ButtonMenu(Game, this, "Options", optionsButtonRectangle, OnOptionButtonPressed, SecondaryBackgroundColor);
+
+            // Third
+            var exitButtonRectangle = new Rectangle(
+                xOffset = ScreenRectangle.Center.X - ButtonSize.Center.X,
+                yOffset += ButtonSize.Height + buttonInterval,
+                ButtonSize.Width, ButtonSize.Height);
+            var ExitButton = new ButtonMenu(Game, this, "Exit", exitButtonRectangle, OnExitButtonPressed, SecondaryBackgroundColor);
+
+            AddGUIItem(LanguageButton);
+            AddGUIItem(OptionsButton);
+            AddGUIItem(ExitButton);
+            #endregion Buttons
+        }
 
         public override void Update(GameTime gameTime)
         {
@@ -99,67 +108,21 @@ namespace MineLib.PGL.Screens.InMenu
 
             if (InputManager.IsOncePressed(Keys.Escape))
                 Exit();
-
-            LastServerBox.Update(gameTime);
-            ConnectBox.Update(gameTime);
-            MultiplayerBox.Update(gameTime);
         }
-        
         public override void Draw(GameTime gameTime)
         {
             SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
-            SpriteBatch.Draw(MainMenuTexture, ScreenRectangle, Color.White);
+            SpriteBatch.Draw(MainBackgroundTexture, ScreenRectangle, Color.White);
             SpriteBatch.End();
-
-            LastServerBox.Draw(gameTime);
-            ConnectBox.Draw(gameTime);
-            MultiplayerBox.Draw(gameTime);
 
             base.Draw(gameTime);
         }
 
         public override void Dispose()
         {
-            if (LastServerBox != null)
-                LastServerBox.Dispose();
+            base.Dispose();
 
-            if (ConnectBox != null)
-                ConnectBox.Dispose();
-
-            if (MultiplayerBox != null)
-                MultiplayerBox.Dispose();
-        }
-
-
-        private void OnDirectConnectButton(Server entry)
-        {
-            AddScreenAndCloseThis(new GameScreen(Game, entry));
-        }
-
-        private void OnLastServerConnectButton(Server entry)
-        {
-            AddScreenAndCloseThis(new GameScreen(Game, entry));
-        }
-
-        private void OnMultiplayerButtonPressed()
-        {
-            AddScreenAndCloseThis(new ServerListScreen(Game));
-        }
-
-        private void OnOptionButtonPressed()
-        {
-            AddScreenAndCloseThis(new OptionsScreen(Game));
-        }
-
-        private void OnLanguageButtonPressed()
-        {
-            AddScreenAndCloseThis(new LanguageScreen(Game));
-        }
-
-        private void OnExitButtonPressed()
-        {
-            Task.Delay(200).Wait();
-            Exit();
+            MainBackgroundTexture?.Dispose();
         }
     }
 }

@@ -17,8 +17,8 @@ namespace MineLib.PGL.World
         GraphicsDevice GraphicsDevice { get; set; }
         //IndexBuffer IndexBuffer { get; set; }
 	    VertexBuffer Buffer { get; set; }
-        int[] OpaqueVertices { get; set; }
-        int[] TransparentVertices { get; set; }
+        public int[] OpaqueVertices { get; set; }
+        public int[] TransparentVertices { get; set; }
 
         BoundingBox BoundingBox { get; set; }
 
@@ -206,7 +206,6 @@ namespace MineLib.PGL.World
                     break;
 
                     case ShaderType.VertexPositionNormalTextureTangentBinormal:
-                    case ShaderType.Deferred:
                         {
                             Buffer = new VertexBuffer(GraphicsDevice, VertexPositionNormalTextureTangentBinormal.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
 
@@ -219,6 +218,7 @@ namespace MineLib.PGL.World
 
 
                     case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                    case ShaderType.Deferred:
                         {
                             Buffer = new VertexBuffer(GraphicsDevice, VertexPositionNormalTextureTangentBinormalLight.VertexDeclaration, opaque.Count, BufferUsage.WriteOnly);
 

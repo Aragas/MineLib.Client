@@ -2,17 +2,28 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using MineLib.PGL.Extensions;
+
 namespace MineLib.PGL.Screens.InMenu
 {
     public sealed class OptionsScreen : Screen
     {
-        Texture2D MainBackgroundTexture { get; set; }
+        Screen BackScreen { get; }
+        Texture2D MainBackgroundTexture { get; }
         
-        public OptionsScreen(Client game) : base(game, "OptionsScreen")
+        public OptionsScreen(Client game, Screen backScreen) : base(game)
         {
+            BackScreen = backScreen;
+
             Game.IsMouseVisible = true;
 
-            MainBackgroundTexture = TextureStorage.GUITextures.OptionsBackground;
+            MainBackgroundTexture = TextureStorage.GUITextures.OptionsBackground.Copy();
+        }
+
+        public override void OnResize()
+        {
+            base.OnResize();
+
         }
 
         public override void Update(GameTime gameTime)
@@ -22,10 +33,12 @@ namespace MineLib.PGL.Screens.InMenu
 
             base.Update(gameTime);
 
-            if (InputManager.IsOncePressed(Keys.Back) || InputManager.IsOncePressed(Buttons.B))
-                AddScreenAndCloseThis(new MainMenuScreen(Game));
+            if (InputManager.IsOncePressed(Keys.Escape) || InputManager.IsOncePressed(Buttons.B))
+            {
+                BackScreen.ToActive();
+                CloseScreen();
+            }
         }
-
         public override void Draw(GameTime gameTime)
         {
             SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
@@ -37,8 +50,9 @@ namespace MineLib.PGL.Screens.InMenu
 
         public override void Dispose()
         {
-            //if (MainBackgroundTexture != null)
-            //    MainBackgroundTexture.Dispose();
+            base.Dispose();
+
+            MainBackgroundTexture?.Dispose();
         }
     }
 }

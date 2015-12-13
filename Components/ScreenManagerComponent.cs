@@ -8,17 +8,13 @@ namespace MineLib.PGL.Components
 {
     public class ScreenManagerComponent : DrawableGameComponent
     {
-        private List<Screen> Screens { get; set; }
-        private List<Screen> ScreensToUpdate { get; set; }
-        private List<Screen> ScreensToDraw { get; set; }
+        private List<Screen> Screens { get; } = new List<Screen>();
+        private List<Screen> ScreensToUpdate { get; } = new List<Screen>();
+        private List<Screen> ScreensToDraw { get; } = new List<Screen>();
 
+        private bool NeedsResize { get; set; }
 
-        public ScreenManagerComponent(Game game) : base(game)
-        {
-            Screens = new List<Screen>();
-            ScreensToUpdate = new List<Screen>();
-            ScreensToDraw = new List<Screen>();
-        }
+        public ScreenManagerComponent(Game game) : base(game) { }
 
 
         public void AddScreen(Screen screen)
@@ -40,6 +36,10 @@ namespace MineLib.PGL.Components
                     RemoveScreen(screen);
         }
 
+        public void OnResize()
+        {
+            NeedsResize = true;
+        }
 
         public override void Update(GameTime gameTime)
         {
@@ -48,22 +48,30 @@ namespace MineLib.PGL.Components
             foreach (var screen in Screens)
                 ScreensToUpdate.Add(screen);
 
+            if (NeedsResize)
+            {
+                foreach (var screen in Screens)
+                    screen.OnResize();
+
+                NeedsResize = false;
+                return;
+            }
+
             foreach (var screen in ScreensToUpdate)
             {
-                if (screen.ScreenState == ScreenState.Hidden)// || screen.ScreenState == ScreenState.Background)
+                if (screen.IsHidden || screen.IsBackground)
                     continue;
 
                 screen.Update(gameTime);
 
-                if (screen.ScreenState == ScreenState.JustNowActive)
+                if (screen.IsJustNowActive)
                 {
                     // Skip one HandleInput, now we won't get a ESC button loop
-                    screen.ScreenState = ScreenState.Active;
+                    screen.ToActive();
                     break;
                 }
             }
         }
-
         public override void Draw(GameTime gameTime)
         {
             ScreensToDraw.Clear();
@@ -73,7 +81,7 @@ namespace MineLib.PGL.Components
 
             foreach (var screen in ScreensToDraw)
             {
-                if (screen.ScreenState == ScreenState.Hidden)
+                if (screen.IsHidden)
                     continue;
 
                 screen.Draw(gameTime);

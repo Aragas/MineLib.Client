@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -23,12 +24,10 @@ namespace MineLib.PGL.World
 		//public const float Size             = 1f;
 
 	    public const float TextureScale	    = 1f / 16f;
-		//private const float ColorScale		= 1f / 32f;
         private const float SkyLight        = 1f / 16f;
 
         private static readonly Vector3[][] CubeMesh;
         private static readonly Vector2[][] CubeTexture;
-	    private static readonly Vector3[] CubeNormals;
 
         static BlockVBO()
         {
@@ -145,33 +144,21 @@ namespace MineLib.PGL.World
             };
 
             #endregion
-
-            CubeNormals = new[]
-            {
-                new Vector3(0, 0, 1),
-                new Vector3(0, 0, -1),
-                new Vector3(1, 0, 0),
-                new Vector3(-1, 0, 0),
-                new Vector3(0, 1, 0),
-                new Vector3(0, -1, 0)
-            };
         }
 
 	    public static IVertexType[] CreateQuadSide(BlockRenderInfo block)
         {
             var quad = new IVertexType[4];
 
-            var unit = CubeMesh[(int)block.Face];
+            var unit = CubeMesh[(int) block.Face];
             var texture = CubeTexture[6];
-            
-	        switch (WorldRendererComponent.ShaderType)
+	        var normal = CalculateNormal(new []{ block.Position + unit[0] , block.Position + unit[1] , block.Position + unit[3] });
+
+            switch (WorldRendererComponent.ShaderType)
 	        {
                 case ShaderType.VertexPositionColorTexture:
 	                for (var i = 0; i < 4; i++)
-	                {
-	                    var t = new Color(Color.White.ToVector3() * block.Block.SkyLight * SkyLight);
-	                    quad[i] = new VertexPositionColorTexture(block.Position + unit[i], t, texture[i] + block.Texture);
-	                }
+	                    quad[i] = new VertexPositionColorTexture(block.Position + unit[i], new Color(Color.White.ToVector3() * block.Block.SkyLight * SkyLight), texture[i] + block.Texture);
 	                break;
 
                 case ShaderType.VertexPositionTexture:
@@ -186,18 +173,18 @@ namespace MineLib.PGL.World
 
                 case ShaderType.VertexPositionNormalTextureLight:
                     for (var i = 0; i < 4; i++)
-                        quad[i] = new VertexPositionNormalTextureLight(block.Position + unit[i], CubeNormals[(int)block.Face],  texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
+                        quad[i] = new VertexPositionNormalTextureLight(block.Position + unit[i], normal,  texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
                     break;
 
                 case ShaderType.VertexPositionNormalTextureTangentBinormal:
-                case ShaderType.Deferred:
                     for (var i = 0; i < 4; i++)
-                        quad[i] = new VertexPositionNormalTextureTangentBinormal(block.Position + unit[i], CubeNormals[(int)block.Face], texture[i] + block.Texture);
+                        quad[i] = new VertexPositionNormalTextureTangentBinormal(block.Position + unit[i], normal, texture[i] + block.Texture);
                     break;
 
                 case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                case ShaderType.Deferred:
                     for (var i = 0; i < 4; i++)
-                        quad[i] = new VertexPositionNormalTextureTangentBinormalLight(block.Position + unit[i], CubeNormals[(int)block.Face], texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
+                        quad[i] = new VertexPositionNormalTextureTangentBinormalLight(block.Position + unit[i], normal, texture[i] + block.Texture, block.Block.SkyLight * SkyLight);
                     break;
 
                 default:
@@ -220,62 +207,52 @@ namespace MineLib.PGL.World
             returnVertices[4] = vertices[2];
             returnVertices[5] = vertices[3];
 
-            if (WorldRendererComponent.ShaderType == ShaderType.VertexPositionNormalTextureTangentBinormal || WorldRendererComponent.ShaderType == ShaderType.Deferred)
+            switch (WorldRendererComponent.ShaderType)
             {
-                var triangle1 = CalculateTangentBinormal(block.Face,
-                    new[] { (IVertexTypeTangentBinormal) returnVertices[0],
-                            (IVertexTypeTangentBinormal) returnVertices[1],
-                            (IVertexTypeTangentBinormal) returnVertices[2] });
-
-                returnVertices[0] = (VertexPositionNormalTextureTangentBinormal)triangle1[0];
-                returnVertices[1] = (VertexPositionNormalTextureTangentBinormal)triangle1[1];
-                returnVertices[2] = (VertexPositionNormalTextureTangentBinormal)triangle1[2];
-
-
-                var triangle2 = CalculateTangentBinormal(block.Face,
-                    new[] { (IVertexTypeTangentBinormal) returnVertices[3],
-                            (IVertexTypeTangentBinormal) returnVertices[4],
-                            (IVertexTypeTangentBinormal) returnVertices[5] });
-
-                returnVertices[3] = (VertexPositionNormalTextureTangentBinormal)triangle2[0];
-                returnVertices[4] = (VertexPositionNormalTextureTangentBinormal)triangle2[1];
-                returnVertices[5] = (VertexPositionNormalTextureTangentBinormal)triangle2[2];
-            }
-
-            if (WorldRendererComponent.ShaderType == ShaderType.VertexPositionNormalTextureTangentBinormalLight)
-            {
-                var triangle1 = CalculateTangentBinormal(block.Face,
-                    new[] { (IVertexTypeTangentBinormal) returnVertices[0],
-                            (IVertexTypeTangentBinormal) returnVertices[1],
-                            (IVertexTypeTangentBinormal) returnVertices[2] });
-
-                returnVertices[0] = (VertexPositionNormalTextureTangentBinormalLight) triangle1[0];
-                returnVertices[1] = (VertexPositionNormalTextureTangentBinormalLight) triangle1[1];
-                returnVertices[2] = (VertexPositionNormalTextureTangentBinormalLight) triangle1[2];
-
-
-                var triangle2 = CalculateTangentBinormal(block.Face, 
-                    new[] { (IVertexTypeTangentBinormal) returnVertices[3],
-                            (IVertexTypeTangentBinormal) returnVertices[4],
-                            (IVertexTypeTangentBinormal) returnVertices[5] });
-
-                returnVertices[3] = (VertexPositionNormalTextureTangentBinormalLight) triangle2[0];
-                returnVertices[4] = (VertexPositionNormalTextureTangentBinormalLight) triangle2[1];
-                returnVertices[5] = (VertexPositionNormalTextureTangentBinormalLight) triangle2[2];
+                case ShaderType.Deferred:
+                case ShaderType.VertexPositionNormalTextureTangentBinormal:
+                case ShaderType.VertexPositionNormalTextureTangentBinormalLight:
+                    CalculateTangentBinormal(ref returnVertices);
+                    break;
             }
 
             return returnVertices;
         }
 
-	    private static IVertexTypeTangentBinormal[] CalculateTangentBinormal(BlockFace face, IVertexTypeTangentBinormal[] vertices)
+
+	    private static void CalculateTangentBinormal(ref IVertexType[] vertices)
 	    {
-            var returnVertices = new IVertexTypeTangentBinormal[3];
+	        var triangle1 = CalculateTangentBinormal1(new[]
+	            {
+	                (IPositionNormalTextureTangentBinormal) vertices[0],
+	                (IPositionNormalTextureTangentBinormal) vertices[1],
+	                (IPositionNormalTextureTangentBinormal) vertices[2]
+	            });
+            vertices[0] = (IVertexType) triangle1[0];
+	        vertices[1] = (IVertexType) triangle1[1];
+	        vertices[2] = (IVertexType) triangle1[2];
+
+
+	        var triangle2 = CalculateTangentBinormal1(new[]
+	            {
+	                (IPositionNormalTextureTangentBinormal) vertices[3],
+	                (IPositionNormalTextureTangentBinormal) vertices[4],
+	                (IPositionNormalTextureTangentBinormal) vertices[5]
+	            });
+            vertices[3] = (IVertexType) triangle2[0];
+            vertices[4] = (IVertexType) triangle2[1];
+            vertices[5] = (IVertexType) triangle2[2];
+	    }
+
+	    private static IPositionNormalTextureTangentBinormal[] CalculateTangentBinormal(IPositionNormalTextureTangentBinormal[] vertices)
+	    {
+            var returnVertices = new IPositionNormalTextureTangentBinormal[3];
 
             var vert1 = vertices[0];
             var vert2 = vertices[1];
             var vert3 = vertices[2];
 
-            var normal = CubeNormals[(int) face];
+	        var normal = vertices[0].Normal;
 
             // This is a triangle from your vertices  
             var v1 = vert1.Position;
@@ -325,6 +302,52 @@ namespace MineLib.PGL.World
 
 	        return returnVertices;
 	    }
+
+        private static IPositionNormalTextureTangentBinormal[] CalculateTangentBinormal1(IPositionNormalTextureTangentBinormal[] vertices)
+        {
+            var returnVertices = new IPositionNormalTextureTangentBinormal[3];
+
+            var vert1 = vertices[0];
+            var vert2 = vertices[1];
+            var vert3 = vertices[2];
+
+            var normal = vertices[0].Normal;
+
+
+            var c1 = Vector3.Cross(normal, new Vector3(0.0f, 0.0f, 1.0f));
+            var c2 = Vector3.Cross(normal, new Vector3(0.0f, 1.0f, 0.0f));
+
+            var tangent = c1.Length() > c2.Length() ? c1 : c2;
+            tangent.Normalize();
+
+            var binormal = Vector3.Cross(normal, tangent);
+            binormal.Normalize();
+
+
+            vert1.Tangent = tangent;
+            vert2.Tangent = tangent;
+            vert3.Tangent = tangent;
+
+            vert1.Binormal = binormal;
+            vert2.Binormal = binormal;
+            vert3.Binormal = binormal;
+
+            returnVertices[0] = vert1;
+            returnVertices[1] = vert2;
+            returnVertices[2] = vert3;
+
+            return returnVertices;
+        }
+
+        private static Vector3 CalculateNormal(Vector3[] vertices)
+	    {
+            var v1 = (vertices[1] - vertices[0]);
+            var v2 = (vertices[0] - vertices[2]);
+            var normal = Vector3.Cross(v1, v2);
+            normal.Normalize();
+
+            return normal;
+        }
 
         /*
         public static VertexPositionTextureLight[] CreateQuadSide(BlockRenderInfo block)

@@ -6,18 +6,20 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input.Touch;
 
+using MineLib.PGL.Extensions;
+
 namespace MineLib.PGL.Screens.GUI.Button
 {
     public abstract class GUIButton : GUIItem
     {
-        public event Action OnButtonPressed;
+        public event EventHandler OnButtonPressed;
 
-        protected Color TextureColor { get; set; }
+        protected Color TextureColor { get; }
 
-        protected string ButtonText { get; set; }
-        public Rectangle ButtonRectangle { get; set; }
-        protected Rectangle ButtonRectangleShadow { get { return new Rectangle(ButtonRectangle.X + 2, ButtonRectangle.Y + 2, ButtonRectangle.Width, ButtonRectangle.Height); } }
-        
+        protected string ButtonText { get; }
+        public Rectangle ButtonRectangle { get; protected set; }
+        protected Rectangle ButtonRectangleShadow => new Rectangle(ButtonRectangle.X + 2, ButtonRectangle.Y + 2, ButtonRectangle.Width, ButtonRectangle.Height);
+
         protected readonly int WidgetSize = 256;
 
         #region Button
@@ -53,67 +55,70 @@ namespace MineLib.PGL.Screens.GUI.Button
         protected Color ButtonUnavailableColor = Color.Gray;
 
 
-        protected Texture2D WidgetsTexture { get { return TextureStorage.GUITextures.Widgets; } }
+        protected Texture2D WidgetsTexture { get; }
 
 
-        private SoundEffect ButtonEffect { get; set; }
+        private SoundEffect ButtonEffect { get; }
 
 
-        protected GUIButton(Client game, Screen screen, string text, Action action, Color textureColor) : base(game, screen)
+        protected GUIButton(Client game, Screen screen, string text, EventHandler action, Color textureColor) : base(game, screen, true)
         {
+            WidgetsTexture = TextureStorage.GUITextures.Widgets.Copy();
+            ButtonEffect = Game.Content.Load<SoundEffect>(@"Sounds\menu_button");
+
             #region Texture scaling
 
             int widgetSize = WidgetsTexture.Width;
             if (WidgetSize != widgetSize)
             {
-                var scale = (float)widgetSize / (float)WidgetSize;
+                var scale = (float) widgetSize / (float) WidgetSize;
 
                 ButtonPosition.X = (int)(ButtonPosition.X * scale);
-                ButtonPosition.Y = (int)(ButtonPosition.Y * scale);
-                ButtonPosition.Width = (int)(ButtonPosition.Width * scale);
-                ButtonPosition.Height = (int)(ButtonPosition.Height * scale);
+                ButtonPosition.Y = (int) (ButtonPosition.Y * scale);
+                ButtonPosition.Width = (int) (ButtonPosition.Width * scale);
+                ButtonPosition.Height = (int) (ButtonPosition.Height * scale);
 
-                ButtonPressedPosition.X = (int)(ButtonPressedPosition.X * scale);
-                ButtonPressedPosition.Y = (int)(ButtonPressedPosition.Y * scale);
-                ButtonPressedPosition.Width = (int)(ButtonPressedPosition.Width * scale);
-                ButtonPressedPosition.Height = (int)(ButtonPressedPosition.Height * scale);
+                ButtonPressedPosition.X = (int) (ButtonPressedPosition.X * scale);
+                ButtonPressedPosition.Y = (int) (ButtonPressedPosition.Y * scale);
+                ButtonPressedPosition.Width = (int) (ButtonPressedPosition.Width * scale);
+                ButtonPressedPosition.Height = (int) (ButtonPressedPosition.Height * scale);
 
-                ButtonUnavailablePosition.X = (int)(ButtonUnavailablePosition.X * scale);
-                ButtonUnavailablePosition.Y = (int)(ButtonUnavailablePosition.Y * scale);
-                ButtonUnavailablePosition.Width = (int)(ButtonUnavailablePosition.Width * scale);
-                ButtonUnavailablePosition.Height = (int)(ButtonUnavailablePosition.Height * scale);
+                ButtonUnavailablePosition.X = (int) (ButtonUnavailablePosition.X * scale);
+                ButtonUnavailablePosition.Y = (int) (ButtonUnavailablePosition.Y * scale);
+                ButtonUnavailablePosition.Width = (int) (ButtonUnavailablePosition.Width * scale);
+                ButtonUnavailablePosition.Height = (int) (ButtonUnavailablePosition.Height * scale);
 
                 #region HalfButton
 
-                ButtonFirstHalfPosition.X = (int)(ButtonFirstHalfPosition.X * scale);
-                ButtonFirstHalfPosition.Y = (int)(ButtonFirstHalfPosition.Y * scale);
-                ButtonFirstHalfPosition.Width = (int)(ButtonFirstHalfPosition.Width * scale);
-                ButtonFirstHalfPosition.Height = (int)(ButtonFirstHalfPosition.Height * scale);
+                ButtonFirstHalfPosition.X = (int) (ButtonFirstHalfPosition.X * scale);
+                ButtonFirstHalfPosition.Y = (int) (ButtonFirstHalfPosition.Y * scale);
+                ButtonFirstHalfPosition.Width = (int) (ButtonFirstHalfPosition.Width * scale);
+                ButtonFirstHalfPosition.Height = (int) (ButtonFirstHalfPosition.Height * scale);
 
-                ButtonSecondHalfPosition.X = (int)(ButtonSecondHalfPosition.X * scale);
-                ButtonSecondHalfPosition.Y = (int)(ButtonSecondHalfPosition.Y * scale);
-                ButtonSecondHalfPosition.Width = (int)(ButtonSecondHalfPosition.Width * scale);
-                ButtonSecondHalfPosition.Height = (int)(ButtonSecondHalfPosition.Height * scale);
+                ButtonSecondHalfPosition.X = (int) (ButtonSecondHalfPosition.X * scale);
+                ButtonSecondHalfPosition.Y = (int) (ButtonSecondHalfPosition.Y * scale);
+                ButtonSecondHalfPosition.Width = (int) (ButtonSecondHalfPosition.Width * scale);
+                ButtonSecondHalfPosition.Height = (int) (ButtonSecondHalfPosition.Height * scale);
 
-                ButtonPressedFirstHalfPosition.X = (int)(ButtonPressedFirstHalfPosition.X * scale);
-                ButtonPressedFirstHalfPosition.Y = (int)(ButtonPressedFirstHalfPosition.Y * scale);
-                ButtonPressedFirstHalfPosition.Width = (int)(ButtonPressedFirstHalfPosition.Width * scale);
-                ButtonPressedFirstHalfPosition.Height = (int)(ButtonPressedFirstHalfPosition.Height * scale);
+                ButtonPressedFirstHalfPosition.X = (int) (ButtonPressedFirstHalfPosition.X * scale);
+                ButtonPressedFirstHalfPosition.Y = (int) (ButtonPressedFirstHalfPosition.Y * scale);
+                ButtonPressedFirstHalfPosition.Width = (int) (ButtonPressedFirstHalfPosition.Width * scale);
+                ButtonPressedFirstHalfPosition.Height = (int) (ButtonPressedFirstHalfPosition.Height * scale);
 
-                ButtonPressedSecondHalfPosition.X = (int)(ButtonPressedSecondHalfPosition.X * scale);
-                ButtonPressedSecondHalfPosition.Y = (int)(ButtonPressedSecondHalfPosition.Y * scale);
-                ButtonPressedSecondHalfPosition.Width = (int)(ButtonPressedSecondHalfPosition.Width * scale);
-                ButtonPressedSecondHalfPosition.Height = (int)(ButtonPressedSecondHalfPosition.Height * scale);
+                ButtonPressedSecondHalfPosition.X = (int) (ButtonPressedSecondHalfPosition.X * scale);
+                ButtonPressedSecondHalfPosition.Y = (int) (ButtonPressedSecondHalfPosition.Y * scale);
+                ButtonPressedSecondHalfPosition.Width = (int) (ButtonPressedSecondHalfPosition.Width * scale);
+                ButtonPressedSecondHalfPosition.Height = (int) (ButtonPressedSecondHalfPosition.Height * scale);
 
-                ButtonUnavailableFirstHalfPosition.X = (int)(ButtonUnavailableFirstHalfPosition.X * scale);
-                ButtonUnavailableFirstHalfPosition.Y = (int)(ButtonUnavailableFirstHalfPosition.Y * scale);
-                ButtonUnavailableFirstHalfPosition.Width = (int)(ButtonUnavailableFirstHalfPosition.Width * scale);
-                ButtonUnavailableFirstHalfPosition.Height = (int)(ButtonUnavailableFirstHalfPosition.Height * scale);
+                ButtonUnavailableFirstHalfPosition.X = (int) (ButtonUnavailableFirstHalfPosition.X * scale);
+                ButtonUnavailableFirstHalfPosition.Y = (int) (ButtonUnavailableFirstHalfPosition.Y * scale);
+                ButtonUnavailableFirstHalfPosition.Width = (int) (ButtonUnavailableFirstHalfPosition.Width * scale);
+                ButtonUnavailableFirstHalfPosition.Height = (int) (ButtonUnavailableFirstHalfPosition.Height * scale);
 
-                ButtonUnavailableSecondHalfPosition.X = (int)(ButtonUnavailableSecondHalfPosition.X * scale);
-                ButtonUnavailableSecondHalfPosition.Y = (int)(ButtonUnavailableSecondHalfPosition.Y * scale);
-                ButtonUnavailableSecondHalfPosition.Width = (int)(ButtonUnavailableSecondHalfPosition.Width * scale);
-                ButtonUnavailableSecondHalfPosition.Height = (int)(ButtonUnavailableSecondHalfPosition.Height * scale);
+                ButtonUnavailableSecondHalfPosition.X = (int) (ButtonUnavailableSecondHalfPosition.X * scale);
+                ButtonUnavailableSecondHalfPosition.Y = (int) (ButtonUnavailableSecondHalfPosition.Y * scale);
+                ButtonUnavailableSecondHalfPosition.Width = (int) (ButtonUnavailableSecondHalfPosition.Width * scale);
+                ButtonUnavailableSecondHalfPosition.Height = (int) (ButtonUnavailableSecondHalfPosition.Height * scale);
 
                 #endregion HalfButton
             }
@@ -123,17 +128,24 @@ namespace MineLib.PGL.Screens.GUI.Button
             TextureColor = textureColor;
             ButtonText = text;
             OnButtonPressed += action;
+        }
+        public void PressButton()
+        {
+            ButtonEffect.Play();
 
-            ButtonEffect = Game.Content.Load<SoundEffect>(@"Sounds\menu_button");
+            OnButtonPressed?.Invoke(this, EventArgs.Empty);
         }
 
-        public override void Draw(GameTime gameTime) { }
+        public override void Draw(GameTime gameTime)
+        {
+            base.Draw(gameTime);
 
+        }
         public override void Update(GameTime gameTime)
         {
             #region Mouse handling
 
-            if (ButtonRectangle.Intersects(new Rectangle(InputManager.CurrentMouseState.X, InputManager.CurrentMouseState.Y, 1, 1)) && !IsNonPressable)
+            if (ButtonRectangle.Intersects(new Rectangle(InputManager.MousePosition.X, InputManager.MousePosition.Y, 1, 1)) && !IsNonPressable)
             {
                 ToSelectedMouseHover();
 
@@ -165,20 +177,9 @@ namespace MineLib.PGL.Screens.GUI.Button
 
             if(OnButtonPressed != null)
                 foreach (var @delegate in OnButtonPressed.GetInvocationList())
-                    OnButtonPressed -= (Action) @delegate;
-            
-            if (ButtonEffect != null)
-                ButtonEffect.Dispose();
-        }
+                    OnButtonPressed -= (EventHandler) @delegate;
 
-
-
-        public void PressButton()
-        {
-            ButtonEffect.Play();
-
-            if (OnButtonPressed != null)
-                OnButtonPressed();
+            ButtonEffect?.Dispose();
         }
     }
 }

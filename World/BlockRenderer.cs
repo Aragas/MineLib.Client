@@ -3,7 +3,7 @@ using System.Reflection;
 
 using Microsoft.Xna.Framework;
 
-using MineLib.Core.Wrappers;
+using Aragas.Core.Wrappers;
 
 namespace MineLib.PGL.World
 {
@@ -108,9 +108,9 @@ namespace MineLib.PGL.World
                 Renderers[i] = DefaultRenderer;
             
             foreach (var assembly in AppDomainWrapper.GetAssemblies())
-                foreach (var type in assembly.GetTypes())
-                    if (typeof (BlockRenderer).GetTypeInfo().IsAssignableFrom(type.GetTypeInfo()) && !type.GetTypeInfo().IsAbstract && type != typeof (BlockRenderer))
-                        Activator.CreateInstance(type); // This is just to call the static initializers
+                foreach (var type in assembly.DefinedTypes)
+                    if (typeof (BlockRenderer).GetTypeInfo().IsAssignableFrom(type) && !type.IsAbstract && type.AsType() != typeof (BlockRenderer))
+                        Activator.CreateInstance(type.AsType()); // This is just to call the static initializers
             
 
             CubeMesh = new Vector3[6][];

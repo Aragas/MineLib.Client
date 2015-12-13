@@ -15,36 +15,26 @@ namespace MineLib.PGL.Screens.GUI
         Hidden
     }
 
-
     public abstract class GUIItem : ScreenGUIComponent
     {
-        protected static FontRenderer MainTextRenderer { get; set; }
+        protected static FontRenderer MainTextRenderer { get; private set; }
 
-        protected TextureStorageComponent TextureStorage { get { return Game.TextureStorage; } }
-        
-        protected SpriteBatch SpriteBatch { get { return _spriteBatch ?? (_spriteBatch = new SpriteBatch(Game.GraphicsDevice)); } }
+        protected SpriteBatch SpriteBatch => _spriteBatch ?? (_spriteBatch = new SpriteBatch(Game.GraphicsDevice));
         private SpriteBatch _spriteBatch;
+        protected TextureStorageComponent TextureStorage => Game.TextureStorage;
 
+        public bool CanBeSelected { get; }
 
-        public bool IsActive { get { return ItemState == GUIItemState.Active; } }
-        public bool IsJustNowActive { get { return ItemState == GUIItemState.JustNowActive; } }
-        public bool IsSelected { get { return ItemState == GUIItemState.Selected; } }
-        public bool IsSelectedMouseHover { get { return ItemState == GUIItemState.SelectedMouseHover; } }
-        public bool IsNonPressable { get { return ItemState == GUIItemState.NonPressable; } }
-        public bool IsHidden { get { return ItemState == GUIItemState.Hidden; } }
-
+        #region ItemState
 
         private GUIItemState ItemState { get; set; }
 
-
-        protected GUIItem(Client game, Screen screen) : base(game, screen)
-        {
-            if (MainTextRenderer == null)
-                //MainTextRenderer = new FontRenderer(FontLoader.LoadFile("PixelUnicode.fnt"), Game.Content.Load<Texture2D>("Fonts\\PixelUnicode_0"));
-                //MainTextRenderer = new FontRenderer(FontLoader.LoadFile("PixelUnicode.fnt"), FontLoader.LoadTextures(GraphicsDevice, "PixelUnicode"));
-                MainTextRenderer = new FontRenderer(GraphicsDevice, "PixelUnicode");
-        }
-
+        public bool IsActive => ItemState == GUIItemState.Active;
+        public bool IsJustNowActive => ItemState == GUIItemState.JustNowActive;
+        public bool IsSelected => ItemState == GUIItemState.Selected;
+        public bool IsSelectedMouseHover => ItemState == GUIItemState.SelectedMouseHover;
+        public bool IsNonPressable => ItemState == GUIItemState.NonPressable;
+        public bool IsHidden => ItemState == GUIItemState.Hidden;
 
         public void ToActive() { ItemState = GUIItemState.Active; }
         public void ToJustNowActive() { ItemState = GUIItemState.JustNowActive; }
@@ -53,12 +43,33 @@ namespace MineLib.PGL.Screens.GUI
         public void ToNonPressable() { ItemState = GUIItemState.NonPressable; }
         public void ToHidden() { ItemState = GUIItemState.Hidden; }
 
+        #endregion ItemState
+
+        #region Resolution
+
+        protected float MinResolutionScale => Screen.MinResolutionScale;
+
+        protected int FontSmallSize => Screen.FontSmallSize;
+        protected int FontNormalSize => Screen.FontNormalSize;
+        protected int FontBigSize => Screen.FontBigSize;
+
+        protected GUIItemSize BoxSize => Screen.BoxSize;
+        protected GUIItemSize ButtonSize => Screen.ButtonSize;
+        protected GUIItemSize ButtonHalfSize => Screen.ButtonHalfSize;
+
+        #endregion Resolution
+
+        protected GUIItem(Client game, Screen screen, bool canBeSelected ) : base(game, screen)
+        {
+            if (MainTextRenderer == null)
+                MainTextRenderer = new FontRenderer(GraphicsDevice, "PixelUnicode", 16, 32, 48);
+
+            CanBeSelected = canBeSelected;
+        }
 
         public override void Dispose()
         {
-
-            if (_spriteBatch != null)
-                _spriteBatch.Dispose();
+            _spriteBatch?.Dispose();
         }
     }
 }

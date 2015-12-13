@@ -7,7 +7,7 @@ using MineLib.PGL.Components;
 
 namespace MineLib.PGL.Screens.InGame.Light
 {
-    abstract public class BaseLight : MineLibComponent
+    public abstract class BaseLight : MineLibComponent
     {
         public static int NumberLights = 0;
 

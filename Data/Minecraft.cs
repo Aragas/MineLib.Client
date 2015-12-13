@@ -1,144 +1,102 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using Aragas.Core.Wrappers;
 
 using MineLib.Core;
-using MineLib.Core.Interfaces;
+using MineLib.Core.Events;
 using MineLib.Core.Loader;
 
 namespace MineLib.PGL.Data
 {
-    public delegate ProtocolAssembly ChoseModule(List<ProtocolAssembly> modules);
-
     /// <summary>
     /// Wrapper for Network of MineLib.Net.
     /// </summary>
-    public partial class Minecraft  : MineLibComponent, IMinecraftClient
+    public sealed partial class Minecraft : MineLibClient
     {
-        public event ChoseModule ChoseModule;
+        public override event EventHandler<ChoseModuleEventArgs> ChoseModule;
 
-        #region Properties
+        public override string ClientBrand => "MineLib";
 
-        public string AccessToken { get; set; }
+        public override string ServerHost => NetworkHandler.Host;
+        public override ushort ServerPort => NetworkHandler.Port;
 
-        public string ClientLogin { get; set; }
-        private string _clientUsername;
+        public override ConnectionState ConnectionState => NetworkHandler.ConnectionState;
+        public override bool Connected => NetworkHandler.Connected;
 
-        public string ClientUsername
+        private string ServerSalt { get; set; }
+        
+        public World World { get; } = new World();
+        public Player Player { get; } = new Player();
+        
+
+        public Minecraft(string login, string password, ProtocolType mode, bool nameVerification = false,string serverSalt = null)
+            : base(login, password, mode, nameVerification)
         {
-            get { return _clientUsername ?? ClientLogin; } 
-            set { _clientUsername = value; }
-        }
-        public string ClientPassword { get; private set; }
-        public bool UseLogin { get; private set; }
-
-        public string ClientToken { get; set; }
-
-        public string SelectedProfile { get; set; }
-
-        public string PlayerName { get; private set; }
-        public string ClientBrand
-        {
-            get { return "MineLib.Network";}
-            set { }
-        }
-
-        public string ServerBrand { get; private set; }
-
-        public string ServerHost { get; private set; }
-
-        public ushort ServerPort { get; private set; }
-
-        public string ServerSalt { get; private set; }
-
-        public string ServerName { get; private set; }
-
-        public string ServerMOTD { get; private set; }
-
-        public ProtocolType Mode { get; private set; }
-        public ConnectionState ConnectionState { get { return _networkHandler.ConnectionState; } }
-
-	    public bool Connected { get { return _networkHandler.Connected; } }
-
-	    #endregion Properties
-
-        public bool ReducedDebugInfo;
-
-        public World World { get; private set; }
-        public Player Player { get; private set; }
-
-        private INetworkHandler _networkHandler;
-
-        public Minecraft(Client game) : base(game) { }
-
-        /// <summary>
-        /// Create a new Minecraft Instance
-        /// </summary>
-        /// <param name="login">The username to use when connecting to Minecraft</param>
-        /// <param name="password">The password to use when connecting to Minecraft (Ignore if you are providing credentials)</param>
-        /// <param name="mode"></param>
-        /// <param name="tcp"></param>
-        /// <param name="nameVerification">To connect using Name Verification or not</param>
-        /// <param name="serverSalt"></param>
-        public IMinecraftClient Initialize(string login, string password, ProtocolType mode, bool nameVerification = false, string serverSalt = null)
-        {
-            ClientLogin = login;
-            ClientPassword = password;
-            UseLogin = nameVerification;
-            Mode = mode;
             ServerSalt = serverSalt;
 
-            ReceiveHandlers = new Dictionary<Type, List<Func<IReceive, Task>>>();
+            ReceiveHandlers = new Dictionary<Type, List<Func<ReceiveEvent, Task>>>();
             RegisterSupportedReceiveEvents();
 
-            World = new World();
-            Player = new Player();
+            var modules = GetModules();
 
-            _networkHandler = new DefaultNetworkHandler();
-            var modules = _networkHandler.GetModules();
-            var module = ChoseModule == null ? modules[0] : ChoseModule(modules);
-            _networkHandler.Initialize(this, module, true);
+            #region Module
 
-            return this;
+            ProtocolAssembly module;
+            if (ChoseModule == null)
+                module = modules[0];
+            else
+            {
+                var args = new ChoseModuleEventArgs(modules);
+                ChoseModule(this, args);
+
+                module = args.ChosedModule;
+            }
+
+            #endregion Module
+
+            NetworkHandler = new ModularNetworkHandler(this, module, true);
         }
-
-        public void Connect(string ip, ushort port)
+        private List<ProtocolAssembly> GetModules()
         {
-            _networkHandler.Connect(ip, port);
-        }
+            var protocols = new List<ProtocolAssembly>();
 
-        public void Disconnect()
+            if (FileSystemWrapper.AssemblyFolder != null)
+                foreach (var file in FileSystemWrapper.AssemblyFolder.GetFilesAsync().Result)
+                    if (FitsMask(file.Name, "Protocol*.dll"))
+                        protocols.Add(new ProtocolAssembly(file.Name));
+
+#if DEBUG //|| !DEBUG
+            if (protocols.Count == 0)
+                protocols.Add(new ProtocolAssembly("ProtocolModern.Portable"));
+#endif
+
+            return protocols;
+        }
+        private static bool FitsMask(string sFileName, string sFileMask)
         {
-            _networkHandler.Disconnect();
+            var mask = new Regex(sFileMask.Replace(".", "[.]").Replace("*", ".*").Replace("?", "."));
+            return mask.IsMatch(sFileName);
         }
 
-        public Task ConnectAsync(string ip, ushort port)
+        public override void Connect(string ip, ushort port)
         {
-            ServerHost = ip;
-            ServerPort = port;
-            return _networkHandler.ConnectAsync(ServerHost, ServerPort);
+            NetworkHandler.Connect(ip, port);
         }
-
-        public bool DisconnectAsync()
+        public override void Disconnect()
         {
-            return _networkHandler.DisconnectAsync();
+            NetworkHandler.Disconnect();
         }
-
-
-        public override void Update(GameTime gameTime) { }
-
-        public override void Draw(GameTime gameTime) { }
 
         public override void Dispose()
         {
-            if (_networkHandler != null) 
-                _networkHandler.Dispose();
+            NetworkHandler?.Dispose();
 
-            if (World != null)
-                World.Dispose();
+            World?.Dispose();
+
+            Player?.Dispose();
         }
     }
 }

@@ -7,8 +7,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using Aragas.Core.Wrappers;
+
 using MineLib.Core.Loader;
-using MineLib.Core.Wrappers;
 
 using MineLib.PGL.Components;
 using MineLib.PGL.Screens.InMenu;
@@ -19,8 +20,7 @@ namespace MineLib.PGL
 {
     public sealed class Client : Game
     {
-        public int PreferredBackBufferWidth { get { return Graphics.PreferredBackBufferWidth; } set { Graphics.PreferredBackBufferWidth = value; Graphics.ApplyChanges(); } }
-        public int PreferredBackBufferHeight { get { return Graphics.PreferredBackBufferHeight; } set { Graphics.PreferredBackBufferHeight = value; Graphics.ApplyChanges(); } }
+        public static Point DefaultResolution => new Point(800, 600);
 
         public static Texture2D Blocks { get; private set; }
 
@@ -29,7 +29,7 @@ namespace MineLib.PGL
         public TextureStorageComponent TextureStorage { get; private set; }
 
 
-        private GraphicsDeviceManager Graphics { get; set; }
+        private GraphicsDeviceManager Graphics { get; }
 
 
         public ProtocolAssembly DefaultModule { get; private set; }
@@ -38,17 +38,12 @@ namespace MineLib.PGL
         public Client(Action<Game> platformCode, bool fullscreen = false)
         {
             Graphics = new GraphicsDeviceManager(this);
-            //Graphics.SynchronizeWithVerticalRetrace = false;
             Graphics.IsFullScreen = fullscreen;
             Graphics.ApplyChanges();
 
-            //IsFixedTimeStep = false;
-            //TargetElapsedTime = new TimeSpan((long)(1000f / 60f * TimeSpan.TicksPerMillisecond));
-
             Content.RootDirectory = "Content";
 
-            if(platformCode != null)
-                platformCode(this);
+            platformCode?.Invoke(this);
         }
 
         protected override void LoadContent()
@@ -74,8 +69,9 @@ namespace MineLib.PGL
                 }
 
 
-            var list = FileSystemWrapper.ProtocolsFolder.GetFilesAsync().Result;
-            DefaultModule = FileSystemWrapper.LoadSettings<ProtocolAssembly>(DefaultModuleSettings, list.Count > 0 ? new ProtocolAssembly(list[0].Path) : null);
+            var list = FileSystemWrapper.AssemblyFolder.GetFilesAsync().Result;
+            DefaultModule = list.Count > 0 ? new ProtocolAssembly(list[0].Path) : default(ProtocolAssembly);
+            FileSystemWrapper.LoadSettings(DefaultModuleSettings, DefaultModule);
 
             ScreenManager = new ScreenManagerComponent(this);
             Components.Add(ScreenManager);
@@ -86,8 +82,29 @@ namespace MineLib.PGL
 #endif
         }
 
+        public void OnResize(object sender, EventArgs e)
+        {
+            if (Graphics.GraphicsDevice.Viewport.Width < DefaultResolution.X || Graphics.GraphicsDevice.Viewport.Height < DefaultResolution.Y)
+            {
+                Resize(DefaultResolution);
+                return;
+            }
+
+            ScreenManager.OnResize();
+        }
+        public void Resize(Point size)
+        {
+            if (size.X < DefaultResolution.X || size.Y < DefaultResolution.Y)
+                return;
+            
+            Graphics.PreferredBackBufferWidth = size.X;
+            Graphics.PreferredBackBufferHeight = size.Y;
+
+            Graphics.ApplyChanges();
+        }
+
         protected override void Update(GameTime gameTime)
-        {          
+        {
             InputManager.Update(gameTime);
 
             if (InputManager.IsOncePressed(Keys.L))
@@ -98,17 +115,25 @@ namespace MineLib.PGL
             }
 
             if (InputManager.IsOncePressed(Keys.M))
-                TargetElapsedTime = new TimeSpan((long)(1000f / 144f * TimeSpan.TicksPerMillisecond));
+                TargetElapsedTime = new TimeSpan((long) (1000f / 144f * TimeSpan.TicksPerMillisecond));
             
             if (InputManager.IsOncePressed(Keys.N))
-                TargetElapsedTime = new TimeSpan((long)(1000f / 60f * TimeSpan.TicksPerMillisecond));
+                TargetElapsedTime = new TimeSpan((long) (1000f / 60f * TimeSpan.TicksPerMillisecond));
             
             if (InputManager.IsOncePressed(Keys.B))
-                TargetElapsedTime = new TimeSpan((long)(1000f / 30f * TimeSpan.TicksPerMillisecond));
+                TargetElapsedTime = new TimeSpan((long) (1000f / 30f * TimeSpan.TicksPerMillisecond));
+
+            if (InputManager.IsOncePressed(Keys.Y))
+                Resize(new Point(800, 600));
             
+            if (InputManager.IsOncePressed(Keys.U))
+                Resize(new Point(1440, 900));
+
+            if (InputManager.IsOncePressed(Keys.I))
+                Resize(new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height));
+
             base.Update(gameTime);
         }
-
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);

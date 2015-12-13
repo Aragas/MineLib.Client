@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace MineLib.PGL.Screens.InGame
+namespace MineLib.PGL.Screens.InGame.Light
 {
     public class QuadRenderer : MineLibComponent
     {
@@ -60,7 +60,6 @@ namespace MineLib.PGL.Screens.InGame
 
 
         public override void Update(GameTime gameTime) { }
-
         public override void Draw(GameTime gameTime) { }
 
         public override void Dispose() { }

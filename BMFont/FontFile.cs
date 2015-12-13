@@ -27,14 +27,9 @@ namespace MineLib.PGL.BMFont
 
         public void Dispose()
         {
-            if(Pages != null)
-                Pages.Clear();
-
-            if (Chars != null)
-                Chars.Clear();
-
-            if (Kernings != null)
-                Kernings.Clear();
+            Pages?.Clear();
+            Chars?.Clear();
+            Kernings?.Clear();
         }
     }
 }

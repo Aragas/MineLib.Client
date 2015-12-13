@@ -53,13 +53,20 @@
     <Compile Include="Components\TextureStorageComponent.cs" />
     <Compile Include="Components\DebugComponent.cs" />
     <Compile Include="Extensions\EffectParameterCollectionExtensions.cs" />
+    <Compile Include="Extensions\Vector3Extension.cs" />
     <Compile Include="InputManager.cs" />
     <Compile Include="Components\NotUsed\WorldComponentA.cs" />
     <Compile Include="Components\NotUsed\WorldComponentN.cs" />
-    <Compile Include="IVertexTypeTangentBinormal.cs" />
+    <Compile Include="IPositionNormalTextureTangentBinormal.cs" />
+    <Compile Include="Screens\GUI\Box\ConnectionEventArgs.cs" />
+    <Compile Include="Screens\GUI\Grid\TextureGrid.cs" />
+    <Compile Include="Screens\GUI\Grid\BaseGrid.cs" />
+    <Compile Include="Screens\GUI\Grid\GUIGrid.cs" />
+    <Compile Include="Screens\InGame\GameOptionScreen.cs" />
     <Compile Include="Screens\InGame\Light\BaseLight.cs" />
+    <Compile Include="Screens\InGame\Light\SpotLight.cs" />
     <Compile Include="Screens\InGame\Light\PointLight.cs" />
-    <Compile Include="Screens\InGame\QuadRenderer.cs" />
+    <Compile Include="Screens\InGame\Light\QuadRenderer.cs" />
     <Compile Include="VertexPositionNormalTextureLight.cs" />
     <Compile Include="VertexPositionNormalTextureTangentBinormal.cs" />
     <Compile Include="VertexPositionNormalTextureTangentBinormalLight.cs" />
@@ -67,7 +74,7 @@
     <Compile Include="World\BlockRenderInfo.cs" />
     <Compile Include="VertexPositionTextureLight.cs" />
     <Compile Include="Extensions\BoundingFrustumExtension.cs" />
-    <Compile Include="Extensions\Vector3Extension.cs" />
+    <Compile Include="Extensions\Texture2DExtension.cs" />
     <Compile Include="Screens\InGame\GameScreen.cs" />
     <Compile Include="Screens\InGame\PlayerClient.cs" />
     <Compile Include="Screens\GUI\Box\BoxDirectConnect.cs" />
@@ -77,7 +84,6 @@
     <Compile Include="Screens\GUI\Box\GUIBox.cs" />
     <Compile Include="MineLibComponent.cs" />
     <Compile Include="Screens\GUI\Text\BaseShadowText.cs" />
-    <Compile Include="Screens\GUI\Text\InputBoxText.cs" />
     <Compile Include="Screens\GUI\Text\GUIText.cs" />
     <Compile Include="Screens\GUI\Text\BaseText.cs" />
     <Compile Include="Screens\GUI\Button\ButtonMenuHalf.cs" />
@@ -100,8 +106,8 @@
     <Compile Include="World\ChunkVBO.cs" />
     <Compile Include="World\SectionVBO.cs" />
     <Compile Include="Components\WorldRendererComponent.cs" />
-    <Compile Include="Data\Minecraft.AsyncReceiving.cs" />
-    <Compile Include="Data\Minecraft.AsyncSending.cs" />
+    <Compile Include="Data\Minecraft.HandlerReceiving.cs" />
+    <Compile Include="Data\Minecraft.HandlerSending.cs" />
     <Compile Include="Data\Minecraft.Client.cs" />
     <Compile Include="Data\Minecraft.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -145,6 +151,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aragas.Core\Aragas.Core.csproj">
+      <Project>{468d9d51-dfe7-47a8-b0d6-52d035fc714d}</Project>
+      <Name>Aragas.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\MineLib.Core')">

@@ -8,8 +8,8 @@ namespace MineLib.PGL.Components
     {
         float fovAngle;
 
-        float near = 0.01f;
-        float far = 5000.0f;
+        public float Near = 0.01f;
+        public float Far = 2000.0f;
 
 
         Vector3 _cameraPosition;
@@ -124,7 +124,7 @@ namespace MineLib.PGL.Components
             if (InputManager.MouseEnabled)
             {
                 var center = new Vector2(Game.GraphicsDevice.Viewport.Width * 0.5f, Game.GraphicsDevice.Viewport.Height * 0.5f);
-                var mouseDelta = InputManager.MouseCamera - center;
+                var mouseDelta = InputManager.MousePosition.ToVector2() - center;
    
 
                 // Android set mouse to (0, 0)
@@ -203,7 +203,7 @@ namespace MineLib.PGL.Components
             _cameraLookAt = _cameraPosition + lookAtOffset;
 
             View = Matrix.CreateLookAt(_cameraPosition, _cameraLookAt, Vector3.Up);
-            Projection = Matrix.CreatePerspectiveFieldOfView(fovAngle, Game.GraphicsDevice.Viewport.AspectRatio, near, far);
+            Projection = Matrix.CreatePerspectiveFieldOfView(fovAngle, Game.GraphicsDevice.Viewport.AspectRatio, Near, Far);
             
             BoundingFrustum = new BoundingFrustum(View * Projection);
 

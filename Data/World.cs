@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Aragas.Core.Packets;
+
 using MineLib.Core.Data;
 using MineLib.Core.Data.Anvil;
-using MineLib.Core.Interfaces;
 
 namespace MineLib.PGL.Data
 {
@@ -13,7 +14,7 @@ namespace MineLib.PGL.Data
 
         // -- Debugging
         public static List<string> UnsupportedBlockList = new List<string>();
-        public static List<IPacket> DamagedChunks = new List<IPacket>();
+        public static List<ProtobufPacket> DamagedChunks = new List<ProtobufPacket>();
         // -- Debugging
 
         //public GameMode GameMode;
@@ -38,9 +39,9 @@ namespace MineLib.PGL.Data
             //return 12; // this disables the day & night cycle.
         }
 
-        public TimeSpan AgeOfTheWorldTimeSpan { get { return TimeSpan.MaxValue; } }
+        public TimeSpan AgeOfTheWorldTimeSpan => TimeSpan.MaxValue;
 
-        public TimeSpan RealTime { get { return new TimeSpan((int)((TimeOfDay / 1000 + 8) % 24), (int)(60 * (TimeOfDay % 1000) / 1000), 0); } }
+        public TimeSpan RealTime => new TimeSpan((int)((TimeOfDay / 1000 + 8) % 24), (int)(60 * (TimeOfDay % 1000) / 1000), 0);
 
         public World()
         {
@@ -63,7 +64,7 @@ namespace MineLib.PGL.Data
         public Chunk GetChunkByBlockCoordinates(Position coordinates)
         {
             if (coordinates.Y < 0 || coordinates.Y >= Chunk.Height)
-                throw new ArgumentOutOfRangeException("coordinates", "Coordinates.Y is out of range");
+                throw new ArgumentOutOfRangeException(nameof(coordinates), "Coordinates.Y is out of range");
 
             var chunkX = coordinates.X >> 4;
             var chunkZ = coordinates.Z >> 4;
@@ -82,18 +83,15 @@ namespace MineLib.PGL.Data
         public Chunk GetChunk(Coordinates2D coordinates)
         {
             foreach (var chunk in Chunks)
-            {
                 if (chunk.Coordinates == coordinates)
                     return chunk;
-            }
+            
             return null;
         }
-
         public void SetChunk(Chunk chunk)
         {
             Chunks.Add(chunk);
         }
-
         public void RemoveChunk(Coordinates2D coordinates)
         {
             for (int i = 0; i < Chunks.Count; i++)
@@ -112,14 +110,12 @@ namespace MineLib.PGL.Data
             var t = chunk.GetBlock(coordinates);
             return t;
         }
-
         public void SetBlock(Position coordinates, Block block)
         {
             var chunk = GetChunkByBlockCoordinates(coordinates);
 
             chunk.SetBlock(coordinates, block);
         }
-
         public void SetBlock(Position coordinates, Coordinates2D chunkCoordinates, Block block)
         {
             var chunk = GetChunk(chunkCoordinates);
@@ -133,7 +129,6 @@ namespace MineLib.PGL.Data
 
             return chunk.GetBlockLight(coordinates);
         }
-        
         public void SetBlockLight(Position coordinates, byte light)
         {
             var chunk = GetChunkByBlockCoordinates(coordinates);
@@ -147,7 +142,6 @@ namespace MineLib.PGL.Data
 
             return chunk.GetBlockSkylight(coordinates);
         }
-
         public void SetBlockSkylight(Position coordinates, byte light)
         {
             var chunk = GetChunkByBlockCoordinates(coordinates);
@@ -161,7 +155,6 @@ namespace MineLib.PGL.Data
 
             return chunk.GetBlockBiome(coordinates);
         }
-
         public void SetBlockBiome(Position coordinates, byte biome)
         {
             var chunk = GetChunkByBlockCoordinates(coordinates);
@@ -173,8 +166,7 @@ namespace MineLib.PGL.Data
 
         public void Dispose()
         {
-            if(Chunks != null)
-                Chunks.Clear();
+            Chunks?.Clear();
         }
     }
 

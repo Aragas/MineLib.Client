@@ -1,81 +1,80 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using MineLib.PGL.Screens.GUI.Button;
-using MineLib.PGL.Screens.GUI.InputBox;
 
 namespace MineLib.PGL.Screens.GUI.Box
 {
+    public struct Grid
+    {
+        public int OffsetX => (int) (10 * Scaling);
+        public int OffsetY => (int)(10 * Scaling);
+        public int Width => Source.Width - OffsetX * 2;
+        public int Height => Source.Height - OffsetY * 2;
+
+        private Rectangle Source { get; }
+        private float Scaling { get; set; }
+
+        public Grid(Rectangle rectangle, float scale)
+        {
+            Source = rectangle;
+            Scaling = scale;
+        }
+
+        public void Scale(float scale)
+        {
+            Scaling = scale;
+        }
+    }
+
     public abstract class GUIBox : GUIItem
     {
-        public static Vector2 BoxSize { get { return new Vector2(450, 400); } }
+        protected Rectangle BoxRectangle { get; }
+        protected Color UsingColor { get; }
         
-        public float AspectRatio { get; private set; }
-        public float ButtonScale { get; private set; }
+        protected Grid BoxGrid { get; }
 
-        public Color UsingColor { get; set; }
-
-
-        protected int BaseXOffset { get { return (int) (10 * AspectRatio); } }
-        protected int BaseYOffset { get { return (int) (10 * AspectRatio); } }
-
-        protected int BoxWidthCenter { get { return BoxRectangle.X + (int)(BoxRectangle.Width * 0.5f); } }
-        protected int BoxHeightCenter { get { return BoxRectangle.Y + (int)(BoxRectangle.Height * 0.5f); } }
-
-        protected int ElementOffset { get { return (int) (10 * AspectRatio); } }
-        protected int ElementWidth { get { return (int)((BoxRectangle.Height - (BaseYOffset * 2)) * AspectRatio); } }
-        protected int ElementHeight { get { return (int)(ElementWidth * (1 / BaseInputBox.AspectRatio)); } }
-
-        protected int ButtonWidth { get { return (int)((BoxRectangle.Height - (BaseYOffset * 6)) * (AspectRatio - 0.15f)); } }
-        protected int ButtonHeight { get { return (int)(ButtonWidth * (1 / ButtonMenuHalf.AspectRatio)); } }
-        protected int ButtonXOffset { get { return (int) (30 * AspectRatio); } }
-        protected int ButtonYOffset { get { return (int) (10 * AspectRatio); } }
+        private List<GUIItem> GUIItems { get; } = new List<GUIItem>();
         
-        protected GUIButton Button { get; private set; }
+        #region Frame & Gradient
 
-        protected Rectangle BoxRectangle { get; private set; }
-        
+        private Point BoxFrameSize { get; } = new Point(2, 2);
+        private Rectangle BoxFrameTopRectangle { get; }
+        private Rectangle BoxFrameBottomRectangle { get; }
+        private Rectangle BoxFrameLeftRectangle { get; }
+        private Rectangle BoxFrameRightRectangle { get; }
 
-        private Vector2 BoxFrameSize { get { return new Vector2(2); } }
-        private Rectangle BoxFrameTopRectangle { get; set; }
-        private Rectangle BoxFrameBottomRectangle { get; set; }
-        private Rectangle BoxFrameLeftRectangle { get; set; }
-        private Rectangle BoxFrameRightRectangle { get; set; }
+        private Rectangle GradientDownRectangle { get; }
+        private Rectangle GradientRightRectangle { get; }
 
-        private Rectangle GradientDownRectangle { get; set; }
-        private Rectangle GradientRightRectangle { get; set; }
+        private Texture2D BoxFrameTexture { get; }
+        private Texture2D BoxTexture { get; }
+        private Texture2D GradientDownTexture { get; }
+        private Texture2D GradientRightTexture { get; }
 
-        private Texture2D BoxFrameTexture { get; set; }
-        private Texture2D BoxTexture { get; set; }
-        private Texture2D GradientDownTexture { get; set; }
-        private Texture2D GradientRightTexture { get; set; }
+        #endregion Frame & Gradient
 
-        
-        protected GUIBox(Client game, Screen screen, Rectangle boxRectangle, string buttonText, Color style) : base(game, screen)
+        protected GUIBox(Client game, Screen screen, Rectangle boxRectangle, string buttonText, Color style) : base(game, screen, false)
         {
             BoxRectangle = boxRectangle;
             UsingColor = style;
 
-            var scaleX = BoxSize.X / BoxRectangle.Width;
-            var scaleY = BoxSize.Y / BoxRectangle.Height;
-            AspectRatio = scaleX/scaleY;
+            BoxGrid = new Grid(boxRectangle, MinResolutionScale);
 
-            BoxFrameTopRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y, BoxRectangle.Width, (int)BoxFrameSize.Y);
-            BoxFrameBottomRectangle = new Rectangle(BoxRectangle.X, (int)(BoxRectangle.Y + BoxRectangle.Height - BoxFrameSize.Y), BoxRectangle.Width, (int)BoxFrameSize.Y);
-            BoxFrameLeftRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y, (int)BoxFrameSize.X, BoxRectangle.Height);
-            BoxFrameRightRectangle = new Rectangle((int)(BoxRectangle.X + BoxRectangle.Width - BoxFrameSize.X), BoxRectangle.Y, (int)BoxFrameSize.X, BoxRectangle.Height);
 
             var buttonRectangle = new Rectangle(
-                BoxWidthCenter - (int)(ButtonWidth * 0.5f),
-                BoxRectangle.Y + BoxRectangle.Height - ButtonHeight - ButtonYOffset,
-                ButtonWidth,
-                ButtonHeight);
-            ButtonScale = buttonRectangle.Width / ButtonMenuHalf.VanillaSize.X;
+                BoxRectangle.Center.X - ButtonHalfSize.Center.X,
+                BoxRectangle.Y + BoxRectangle.Height - ButtonHalfSize.Height - BoxGrid.OffsetY,
+                ButtonHalfSize.Width, ButtonHalfSize.Height);
 
             if (!string.IsNullOrEmpty(buttonText))
             {
-                Button = new ButtonMenuHalf(Game, Screen, buttonText, buttonRectangle, null, UsingColor);
+                var Button = new ButtonMenuHalf(Game, Screen, buttonText, buttonRectangle, null, UsingColor);
                 Button.OnButtonPressed += OnButtonPressed;
+                GUIItems.Add(Button);
             }
 
 
@@ -85,23 +84,31 @@ namespace MineLib.PGL.Screens.GUI.Box
             BoxFrameTexture = new Texture2D(GraphicsDevice, 1, 1);
             BoxFrameTexture.SetData(new[] { new Color(0, 0, 0, 240) });
 
-            var scale = (int)(1 * (1 / ButtonScale));
+            var scale = (int) MinResolutionScale;
             GradientDownTexture = CreateGradientDown(BoxRectangle.Width + 5 - scale, 5);
             GradientRightTexture = CreateGradientRight(5, BoxRectangle.Height + 5 - scale);
             GradientDownRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y + BoxRectangle.Height - scale, GradientDownTexture.Width, GradientDownTexture.Height);
             GradientRightRectangle = new Rectangle(BoxRectangle.X + BoxRectangle.Width - scale, BoxRectangle.Y, GradientRightTexture.Width, GradientRightTexture.Height);
-        }
 
-        public virtual void AddToGUIItemMultiController(GUIItemMultiController guiButtonMultiController)
+
+            BoxFrameTopRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y, BoxRectangle.Width, BoxFrameSize.Y);
+            BoxFrameBottomRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y + BoxRectangle.Height - BoxFrameSize.Y, BoxRectangle.Width, BoxFrameSize.Y);
+            BoxFrameLeftRectangle = new Rectangle(BoxRectangle.X, BoxRectangle.Y, BoxFrameSize.X, BoxRectangle.Height);
+            BoxFrameRightRectangle = new Rectangle(BoxRectangle.X + BoxRectangle.Width - BoxFrameSize.X, BoxRectangle.Y, BoxFrameSize.X, BoxRectangle.Height);
+    }
+        protected abstract void OnButtonPressed(object sender, EventArgs eventArgs);
+
+        protected void AddGUIItem(GUIItem item) { GUIItems.Insert(GUIItems.Count - 1, item); } // Button should be last.
+        protected void AddGUIItems(params GUIItem[] items) { GUIItems.InsertRange(GUIItems.Count - 1, items); } // Button should be last.
+
+        public GUIItem[] GetGUIItems()
         {
-            guiButtonMultiController.AddGUIItem(Button);
+            var list = new List<GUIItem> { this };
+            list.AddRange(GUIItems);
+            return list.ToArray();
         }
 
-        public override void Update(GameTime gameTime)
-        {
-            //Button.Update(gameTime);
-        }
-
+        public override void Update(GameTime gameTime) { }
         public override void Draw(GameTime gameTime)
         {
             SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
@@ -118,15 +125,21 @@ namespace MineLib.PGL.Screens.GUI.Box
 
             SpriteBatch.End();
 
-            Button.Draw(gameTime);
+            base.Draw(gameTime);
         }
 
         public override void Dispose()
         {
-            Button.Dispose();
-        }
+            base.Dispose();
 
-        protected abstract void OnButtonPressed();
+            GUIItems?.Clear();
+
+            BoxFrameTexture?.Dispose();
+            BoxTexture?.Dispose();
+
+            GradientDownTexture?.Dispose();
+            GradientRightTexture?.Dispose();
+        }
 
 
         private Texture2D CreateGradientDown(int width, int height)
@@ -154,7 +167,6 @@ namespace MineLib.PGL.Screens.GUI.Box
             backgroundTex.SetData(bgc);
             return backgroundTex;
         }
-
         private Texture2D CreateGradientRight(int width, int height)
         {
             var backgroundTex = new Texture2D(GraphicsDevice, width, height);

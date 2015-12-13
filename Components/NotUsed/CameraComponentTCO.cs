@@ -124,8 +124,8 @@ namespace MineLib.PGL.Components.NotUsed
             if (InputManager.MouseEnabled)
             {
                 //Cache mouse location
-                float deltaX = InputManager.MouseCamera.X - (Game.GraphicsDevice.Viewport.Width / 2);
-                float deltaY = InputManager.MouseCamera.Y - (Game.GraphicsDevice.Viewport.Height / 2);
+                float deltaX = InputManager.MousePosition.X - (Game.GraphicsDevice.Viewport.Width / 2);
+                float deltaY = InputManager.MousePosition.Y - (Game.GraphicsDevice.Viewport.Height / 2);
 
                 _mouseRotationBuffer.X -= 0.01f * deltaX * dt;
                 _mouseRotationBuffer.Y -= 0.01f * deltaY * dt;

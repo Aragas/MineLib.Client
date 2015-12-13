@@ -10,23 +10,20 @@ using MineLib.PGL.Screens.GUI.GamePad;
 
 namespace MineLib.PGL.Screens.GUI.InputBox
 {
-    public delegate void InputBoxEventHandler(string text);
-
     public abstract class GUIInputBox : GUIItem
     {
-        public event InputBoxEventHandler OnEnterPressed;
+        public event Action<string> OnEnterPressed;
         public event Action<GUIInputBox> OnFocused;
         public event Action<GUIInputBox> OnUnFocused;
 
 
-        public Color UsingColor { get; set; }
-        public bool ShowInput { get; protected internal set; }
+        public Color UsingColor { get; private set; }
+        public bool ShowInput { get; set; }
 
         protected Rectangle InputBoxRectangle { get; set; }
 
 
-        public string Text { get { return _text; } private set { _text = value; } }
-        private string _text = "";
+        public string Text { get; private set; } = "";
 
         protected Color TextColor = Color.White;
         protected Color TextShadowColor = Color.Gray;
@@ -34,27 +31,45 @@ namespace MineLib.PGL.Screens.GUI.InputBox
         protected Texture2D BlackTexture { get; set; }
 
 
+        private const int CycleNumb = 40;
+        private int CycleCount = CycleNumb;
+
+
         private PadDaisywheel PadDaisywheel { get; set; }
 
 
-        protected GUIInputBox(Client game, Screen screen, InputBoxEventHandler onEnterPressed, Color style) : base(game, screen)
+        protected GUIInputBox(Client game, Screen screen, Action<string> onEnterPressed, Color style) : base(game, screen, true)
         {
             UsingColor = style;
             OnEnterPressed += onEnterPressed;
 
-            PadDaisywheel = Screen.Daisywheel;
+            //PadDaisywheel = Screen.Daisywheel;
+        }
+        public void PressEnter()
+        {
+            OnEnterPressed?.Invoke(Text);
         }
 
         public override void Update(GameTime gameTime)
         {
+            if (IsSelected)
+            {
+                if (CycleCount > CycleNumb)
+                {
+                    ShowInput = !ShowInput;
+                    CycleCount = 0;
+                }
+
+                CycleCount++;
+            }
+
             #region Mouse handling
 
-            if (!IsNonPressable && InputBoxRectangle.Intersects(new Rectangle(InputManager.CurrentMouseState.X, InputManager.CurrentMouseState.Y, 1, 1)))
+            if (!IsNonPressable && InputBoxRectangle.Intersects(new Rectangle(InputManager.MousePosition.X, InputManager.MousePosition.Y, 1, 1)))
             {
                 if (InputManager.MouseLeftClicked)
                 {
-                    if (OnFocused != null)
-                        OnFocused(this);
+                    OnFocused?.Invoke(this);
 
                     ToSelected();
                 }
@@ -63,8 +78,7 @@ namespace MineLib.PGL.Screens.GUI.InputBox
             {
                 if (InputManager.MouseLeftClicked)
                 {
-                    if (OnUnFocused != null)
-                        OnUnFocused(this);
+                    OnUnFocused?.Invoke(this);
 
                     ToActive();
                 }
@@ -72,8 +86,7 @@ namespace MineLib.PGL.Screens.GUI.InputBox
                 foreach (var gesture in InputManager.TouchGestures)
                     if (gesture.GestureType == GestureType.Tap && InputBoxRectangle.Contains(gesture.Position))
                     {
-                        if (OnFocused != null)
-                            OnFocused(this);
+                        OnFocused?.Invoke(this);
 
                         ToSelected();
 
@@ -83,9 +96,8 @@ namespace MineLib.PGL.Screens.GUI.InputBox
                     }
                     else if(gesture.GestureType == GestureType.Tap && !InputBoxRectangle.Contains(gesture.Position))
                     {
-                        if (OnUnFocused != null)
-                            OnUnFocused(this);
-                    
+                        OnUnFocused?.Invoke(this);
+
                         ToActive();
                     
                         InputManager.HideKeyboard();
@@ -146,12 +158,8 @@ namespace MineLib.PGL.Screens.GUI.InputBox
 
             if (IsSelected)
             {
-                var keys = new List<Keys>();
-                keys.AddRange(InputManager.CurrentKeyboardState.GetPressedKeys());
-                keys.AddRange(InputManager.CurrentKeys);
-
-                foreach (var key in keys)
-                    if (InputManager.LastKeyboardState.IsKeyUp(key) || InputManager.IsLastKeyPressed(key))
+                foreach (var key in InputManager.CurrentKeys)
+                    if (InputManager.IsOncePressed(key))
                         switch (key)
                         {
                             case Keys.Back:
@@ -162,12 +170,11 @@ namespace MineLib.PGL.Screens.GUI.InputBox
                                 break;
 
                             case Keys.Enter:
-                                if(OnEnterPressed != null)
-                                    OnEnterPressed(Text);
+                                OnEnterPressed?.Invoke(Text);
                                 break;
 
                             default:
-                                Text += ConvertKeyboardInput(InputManager.CurrentKeyboardState, key);
+                                Text += ConvertKeyboardInput(key);
                                 break;
                         }
             }
@@ -194,10 +201,11 @@ namespace MineLib.PGL.Screens.GUI.InputBox
             //else if (OnNonEmpty != null)
             //    OnNonEmpty();
         }
-
         public override void Draw(GameTime gameTime)
         {
-            PadDaisywheel.Draw(gameTime);
+            base.Draw(gameTime);
+
+            //PadDaisywheel.Draw(gameTime);
         }
 
         public override void Dispose()
@@ -206,7 +214,7 @@ namespace MineLib.PGL.Screens.GUI.InputBox
 
             if (OnEnterPressed != null)
                 foreach (var @delegate in OnEnterPressed.GetInvocationList())
-                    OnEnterPressed -= (InputBoxEventHandler) @delegate;
+                    OnEnterPressed -= (Action<string>) @delegate;
 
             if (OnFocused != null)
                 foreach (var @delegate in OnFocused.GetInvocationList())
@@ -215,9 +223,8 @@ namespace MineLib.PGL.Screens.GUI.InputBox
             if (OnUnFocused != null)
                 foreach (var @delegate in OnUnFocused.GetInvocationList())
                     OnUnFocused -= (Action<GUIInputBox>) @delegate;
-            
-            if (BlackTexture != null)
-                BlackTexture.Dispose();
+
+            BlackTexture?.Dispose();
         }
 
 
@@ -232,9 +239,9 @@ namespace MineLib.PGL.Screens.GUI.InputBox
             Text += character;
         }
 
-        private static char? ConvertKeyboardInput(KeyboardState keyboard, Keys key)
+        private static char? ConvertKeyboardInput(Keys key)
         {
-            bool shift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
+            bool shift = InputManager.IsCurrentKeyPressed(Keys.LeftShift) || InputManager.IsCurrentKeyPressed(Keys.RightShift);
 
             switch (key)
             {

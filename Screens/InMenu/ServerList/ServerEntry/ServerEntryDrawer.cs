@@ -81,7 +81,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
 
         #endregion
 
-        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server) : base(game, screen)
+        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server) : base(game, screen, false)
         {
             Servers = server;
 
@@ -106,7 +106,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
 
 
 
-            BackgroundTexture = Screen.TextureStorage.GUITextures.OptionsBackground;
+            BackgroundTexture = TextureStorage.GUITextures.OptionsBackground;
 
             ServerEntryImageTexture = new Texture2D(GraphicsDevice, 1, 1);
             ServerEntryImageTexture.SetData(new[] { new Color(255, 255, 255, 255) });
@@ -159,7 +159,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
         /// <param name="screen">Screen</param>
         /// <param name="server">Server list</param>
         /// <param name="buttons">GUIButtons</param>
-        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server, IEnumerable<GUIButton> buttons) : base(game, screen)
+        public ServerEntryDrawer(Client game, ServerListScreen screen, List<Server> server, IEnumerable<GUIButton> buttons) : base(game, screen, false)
         {
             Servers = server;
 
@@ -311,24 +311,18 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
         {
             #region Mouse selection handling
 
-            var mouse = InputManager.CurrentMouseState;
-
             for (int i = 0; i < ServerEntryRectangles.Length; i++)
             {
-                var mouseRectangle = new Rectangle(mouse.X, mouse.Y, 1, 1);
-                if (AvailableScreenRectangle.Intersects(mouseRectangle) &&
-                    ServerEntryRectangles[i].Intersects(mouseRectangle) &&
-                InputManager.CurrentMouseState.LeftButton == ButtonState.Pressed && InputManager.LastMouseState.LeftButton == ButtonState.Released)
+                var mouseRectangle = new Rectangle(InputManager.MousePosition.X, InputManager.MousePosition.Y, 1, 1);
+                if (AvailableScreenRectangle.Intersects(mouseRectangle) && ServerEntryRectangles[i].Intersects(mouseRectangle) && InputManager.MouseLeftClicked)
                 {
                     // Reinitiate and make others bools false
                     ServerSelected = new bool[Servers.Count];
 
                     ServerSelected[i] = true;
-                    if (OnClickedPressed != null)
-                        OnClickedPressed(i);
+                    OnClickedPressed?.Invoke(i);
 
-                    if (OnEntryClicked != null)
-                        OnEntryClicked();
+                    OnEntryClicked?.Invoke();
                 }
             }
 
@@ -375,7 +369,7 @@ namespace MineLib.PGL.Screens.InMenu.ServerList.ServerEntry
         {
             SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
 
-            SpriteBatch.Draw(BackgroundTexture, BackgroundVector, ScreenRectangle, Screen.MainBackgroundColor, 0.0f, Vector2.Zero, 4.0f, SpriteEffects.None, 0f);
+            //SpriteBatch.Draw(BackgroundTexture, BackgroundVector, ScreenRectangle, Screen.MainBackgroundColor, 0.0f, Vector2.Zero, 4.0f, SpriteEffects.None, 0f);
 
             SpriteBatch.Draw(BlackTexture, SliderRectangle, Rectangle.Empty, Color.White);
 

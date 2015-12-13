@@ -31,24 +31,24 @@ namespace MineLib.PGL.Screens.GUI.GamePad
         public bool IsHidden { get; set; }
 
 
-        Rectangle ScreenRectangle { get { return Game.GraphicsDevice.Viewport.Bounds; } }
+        Rectangle ScreenRectangle => Game.GraphicsDevice.Viewport.Bounds;
 
-        SpriteBatch SpriteBatch { get; set; }
+         SpriteBatch SpriteBatch { get; }
 
-        FontRenderer MainTextRenderer { get; set; }
+        FontRenderer MainTextRenderer { get; }
 
 
-        Texture2D MainCircleTexture { get; set; }
-        Rectangle MainCircleRectangle { get; set; }
+        Texture2D MainCircleTexture { get; }
+        Rectangle MainCircleRectangle { get; }
 
-        Texture2D GamePadButtonsTexture { get; set; }
+        Texture2D GamePadButtonsTexture { get; }
 
-        float CharSize { get {  return 700 * Scale;} }
+        float CharSize => 700 * Scale;
 
-        GamePadKeyboardEntry[] ButtonEntries { get; set; }
+         GamePadKeyboardEntry[] ButtonEntries { get; }
 
         int ButtonSize { get; set; }
-        float Scale { get; set; }
+        float Scale { get; }
 
         Color _color = new Color(255, 255, 255, 200);
 
@@ -77,7 +77,8 @@ namespace MineLib.PGL.Screens.GUI.GamePad
 
             #region Scale
             
-            var size = MainTextRenderer.MeasureText(" ");
+            //var size = MainTextRenderer.MeasureText(" ");
+            var size = new Vector2(1f);
             var xScale = 1.0f / ((ButtonSize * 0.5f) / size.X);
             var yScale = 1.0f / ((ButtonSize * 0.5f) / size.Y);
             Scale = Math.Min(xScale, yScale);
@@ -186,40 +187,38 @@ namespace MineLib.PGL.Screens.GUI.GamePad
 
             #region AnalogThumbStick
 
-            var thumbStick = InputManager.CurrentGamePadState.ThumbSticks.Left;
-
-            ButtonEntries[0].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.Up;
-            ButtonEntries[1].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.UpRight;
-            ButtonEntries[2].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.Right;
-            ButtonEntries[3].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.DownRight;
-            ButtonEntries[4].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.Down;
-            ButtonEntries[5].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.DownLeft;
-            ButtonEntries[6].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.Left;
-            ButtonEntries[7].Selected = InputManager.GetAnalogStickDirection(thumbStick) == AnalogStickDirection.UpLeft;
+            ButtonEntries[0].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.Up;
+            ButtonEntries[1].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.UpRight;
+            ButtonEntries[2].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.Right;
+            ButtonEntries[3].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.DownRight;
+            ButtonEntries[4].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.Down;
+            ButtonEntries[5].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.DownLeft;
+            ButtonEntries[6].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.Left;
+            ButtonEntries[7].Selected = InputManager.GetAnalogStickLeftDirection() == AnalogStickDirection.UpLeft;
 
             #endregion
 
             #region RightButtons
 
-            if (InputManager.IsOncePressed(Buttons.X) && InputManager.CurrentGamePadState.ThumbSticks.Left != Vector2.Zero)
+            if (InputManager.IsOncePressed(Buttons.X) && InputManager.AnalogStickLeft != Vector2.Zero)
                 foreach (var buttonEntry in ButtonEntries)
                     if (buttonEntry.Selected && OnCharReceived != null)
                         OnCharReceived(buttonEntry.Chars[0]);
                 
 
-            if (InputManager.IsOncePressed(Buttons.Y) && InputManager.CurrentGamePadState.ThumbSticks.Left != Vector2.Zero)
+            if (InputManager.IsOncePressed(Buttons.Y) && InputManager.AnalogStickLeft != Vector2.Zero)
                 foreach (var buttonEntry in ButtonEntries)
                     if (buttonEntry.Selected && OnCharReceived != null)
                         OnCharReceived(buttonEntry.Chars[1]);
                 
 
-            if (InputManager.IsOncePressed(Buttons.B) && InputManager.CurrentGamePadState.ThumbSticks.Left != Vector2.Zero)
+            if (InputManager.IsOncePressed(Buttons.B) && InputManager.AnalogStickLeft != Vector2.Zero)
                 foreach (var buttonEntry in ButtonEntries)
                     if (buttonEntry.Selected && OnCharReceived != null)
                         OnCharReceived(buttonEntry.Chars[2]);
                 
 
-            if (InputManager.IsOncePressed(Buttons.A) && InputManager.CurrentGamePadState.ThumbSticks.Left != Vector2.Zero)
+            if (InputManager.IsOncePressed(Buttons.A) && InputManager.AnalogStickLeft != Vector2.Zero)
                 foreach (var buttonEntry in ButtonEntries)
                     if (buttonEntry.Selected && OnCharReceived != null)
                         OnCharReceived(buttonEntry.Chars[3]);
@@ -227,15 +226,12 @@ namespace MineLib.PGL.Screens.GUI.GamePad
 
             #endregion
 
-            if (InputManager.IsOncePressed(Buttons.B) && InputManager.CurrentGamePadState.ThumbSticks.Left == Vector2.Zero)
-                if (OnCharReceived != null)
-                    OnCharReceived(' ');   
-
-            if (InputManager.IsOncePressed(Buttons.X) && InputManager.CurrentGamePadState.ThumbSticks.Left == Vector2.Zero)
-                if(OnCharDeleted != null)
-                    OnCharDeleted();   
+            if (InputManager.IsOncePressed(Buttons.B) && InputManager.AnalogStickLeft == Vector2.Zero)
+                OnCharReceived?.Invoke(' ');
+            
+            if (InputManager.IsOncePressed(Buttons.X) && InputManager.AnalogStickLeft == Vector2.Zero)
+                OnCharDeleted?.Invoke();
         }
-
         public override void Draw(GameTime gameTime)
         {
             if (IsHidden)
@@ -289,18 +285,14 @@ namespace MineLib.PGL.Screens.GUI.GamePad
 
         public override void Dispose()
         {
-            if(SpriteBatch != null)
-                SpriteBatch.Dispose();
+            SpriteBatch?.Dispose();
 
-            if (MainTextRenderer != null)
-                MainTextRenderer.Dispose();
+            MainTextRenderer?.Dispose();
 
-           if (MainCircleTexture != null)
-               MainCircleTexture.Dispose();
+            MainCircleTexture?.Dispose();
 
-           if (GamePadButtonsTexture != null)
-               GamePadButtonsTexture.Dispose();
-       }
+            GamePadButtonsTexture?.Dispose();
+        }
 
 
         // http://stackoverflow.com/questions/5641579/xna-draw-a-filled-circle
